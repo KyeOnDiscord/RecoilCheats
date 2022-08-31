@@ -9,6 +9,7 @@
 Cheat* cheat;
 
 
+
 DWORD WINAPI MainThread(HMODULE hModule)
 {
 #ifdef UseConsole
@@ -17,6 +18,10 @@ DWORD WINAPI MainThread(HMODULE hModule)
 	freopen_s(&f, "CONOUT$", "w", stdout);
 #endif // UseConsole
 
+
+
+
+	
 	cheat = new Cheat();
 	cheat->Init();
 

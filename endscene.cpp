@@ -137,6 +137,7 @@ void InitImGui(IDirect3DDevice9* pDevice) {
 }
 
 
+bool LoadTextureFromFile(IDirect3DDevice9* pDevice, const char* filename, PDIRECT3DTEXTURE9* out_texture, int* out_width, int* out_height);
 
 HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 {
@@ -144,12 +145,24 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 		return cheat->dx9.oEndScene(pDevice);
 
 	static bool Initialized = false;
-
+	int my_image_width = 0;
+	int my_image_height = 0;
+	PDIRECT3DTEXTURE9 my_texture = NULL;
 	if (!Initialized)
 	{
 		InitImGui(pDevice);
+		
+		
+		if (my_texture == NULL)
+		{
+			bool ret = LoadTextureFromFile(pDevice, "C:\\Users\\ProMa\\Downloads\\MyImage01.jpg", &my_texture, &my_image_width, &my_image_height);
+			IM_ASSERT(ret);
+		}
+		
+		
 		Initialized = true;
 	}
+	
 
 	ImGui_ImplDX9_NewFrame();
 	ImGui_ImplWin32_NewFrame();
@@ -168,20 +181,18 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 
 		ImGui::Text(skCrypt("Toggle Menu with F1"));
 		ImGui::Text(skCrypt("Eject hack with END"));
-
-		/*static LPDIRECT3DTEXTURE9* byteImage = nullptr;
-		if (byteImage == nullptr)
-		{
-			HRESULT result = D3DXCreateTextureFromFileW(pDevice, L"C:\\Users\\ProMa\\Downloads\\chisatotest.jpg", byteImage);
-			int i = 0;
-		}
-			
-
-
-		ImGui::Image(byteImage, ImVec2(200, 234));*/
-
+		
 		ImGui::End();
 	}
+
+	
+	
+	ImGui::Begin("DirectX9 Texture Test");
+	ImGui::Text("pointer = %p", my_texture);
+	ImGui::Text("size = %d x %d", my_image_width, my_image_height);
+	ImGui::Image((void*)my_texture, ImVec2(my_image_width, my_image_height));
+	ImGui::End();
+	
 
 	//ImGui::ShowDemoWindow();
 	

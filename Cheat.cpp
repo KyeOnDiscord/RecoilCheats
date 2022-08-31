@@ -116,3 +116,25 @@ bool Cheat::directx9::GetD3D9Device(void** pTable, size_t size)
 	pD3D->Release();
 	return true;
 }
+
+
+#include <D3dx9tex.h>
+#pragma comment(lib, "D3dx9")
+
+// Simple helper function to load an image into a DX9 texture with common settings
+bool LoadTextureFromFile(IDirect3DDevice9* pDevice,const char* filename, PDIRECT3DTEXTURE9* out_texture, int* out_width, int* out_height)
+{
+	// Load texture from disk
+	PDIRECT3DTEXTURE9 texture;
+	HRESULT hr = D3DXCreateTextureFromFileA(pDevice, filename, &texture);
+	if (hr != S_OK)
+		return false;
+
+	// Retrieve description of the texture surface so we can access its size
+	D3DSURFACE_DESC my_image_desc;
+	texture->GetLevelDesc(0, &my_image_desc);
+	*out_texture = texture;
+	*out_width = (int)my_image_desc.Width;
+	*out_height = (int)my_image_desc.Height;
+	return true;
+}
