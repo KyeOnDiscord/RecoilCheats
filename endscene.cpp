@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "endscene.h"
-#include "chisato.h"
 
 extern Cheat* cheat;
 
@@ -170,12 +169,16 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 		ImGui::Text(skCrypt("Toggle Menu with F1"));
 		ImGui::Text(skCrypt("Eject hack with END"));
 
-		static LPDIRECT3DTEXTURE9* byteImage = nullptr;
+		/*static LPDIRECT3DTEXTURE9* byteImage = nullptr;
 		if (byteImage == nullptr)
-			D3DXCreateTextureFromFileInMemory(pDevice, chisato, sizeof(chisato), byteImage);
+		{
+			HRESULT result = D3DXCreateTextureFromFileW(pDevice, L"C:\\Users\\ProMa\\Downloads\\chisatotest.jpg", byteImage);
+			int i = 0;
+		}
+			
 
 
-		ImGui::Image(byteImage, ImVec2(200, 234));
+		ImGui::Image(byteImage, ImVec2(200, 234));*/
 
 		ImGui::End();
 	}

@@ -98,7 +98,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Cheat.h" />
-    <ClInclude Include="chisato.h" />
     <ClInclude Include="dx9.h" />
     <ClInclude Include="endscene.h" />
     <ClInclude Include="framework.h" />
