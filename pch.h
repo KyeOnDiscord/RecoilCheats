@@ -15,4 +15,4 @@
 #include "dx9.h"
 #include "hook.h"
 #include "endscene.h"
-
+#include <string>

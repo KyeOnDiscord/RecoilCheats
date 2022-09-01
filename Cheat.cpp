@@ -14,10 +14,9 @@ void Cheat::Init()
 
 void Cheat::Update()
 {
-
 	if (GetAsyncKeyState(VK_F1) & 1)
 	{
-		this->settings.ShowMenu= !settings.ShowMenu;
+		this->settings.ShowMenu = !settings.ShowMenu;
 
 		if (settings.ShowMenu)
 		{
@@ -28,6 +27,8 @@ void Cheat::Update()
 			/*hack->EngineClient->ClientCmd_Unrestricted(skCrypt("hideconsole"));*/
 		}
 	}
+
+	cheat->dx9.UpdateOverlayPosition();
 }
 
 void Cheat::InitModules()
@@ -137,4 +138,20 @@ bool LoadTextureFromFile(IDirect3DDevice9* pDevice,const char* filename, PDIRECT
 	*out_width = (int)my_image_desc.Width;
 	*out_height = (int)my_image_desc.Height;
 	return true;
+}
+
+
+//https://www.unknowncheats.me/forum/counterstrike-global-offensive/291757-fps-indicator.html
+int FrameRate()
+{
+	static int iFps, iLastFps;
+	static float flLastTickCount, flTickCount;
+	flTickCount = clock() * 0.001f;
+	iFps++;
+	if ((flTickCount - flLastTickCount) >= 1.0f) {
+		flLastTickCount = flTickCount;
+		iLastFps = iFps;
+		iFps = 0;
+	}
+	return iLastFps;
 }

@@ -17,24 +17,17 @@ DWORD WINAPI MainThread(HMODULE hModule)
 	AllocConsole();
 	freopen_s(&f, "CONOUT$", "w", stdout);
 #endif // UseConsole
-
-
-
-
 	
 	cheat = new Cheat();
 	cheat->Init();
 
 	cheat->hooks.endscene.EnableHook();
 
-	auto testString = skCrypt(L"TestString");	// encrypted at compile-time
-	// or skCrypt_key to set the keys manually
-
-	wprintf(testString);                            // automatic decryption on usage (alternatively .decrypt())
-
 	while (!(GetKeyState(VK_END) & 0x8000))
 	{
 		cheat->Update();
+
+		Sleep(1000 / 10);
 	}
 
 	

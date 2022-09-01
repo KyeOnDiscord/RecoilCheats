@@ -13,26 +13,6 @@ LRESULT __stdcall hWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		{
 			return true;
 		}
-		ImGuiIO& io = ImGui::GetIO();
-
-		switch (uMsg)
-		{
-		case WM_LBUTTONDOWN:
-			io.MouseDown[1] = !io.MouseDown[0];
-			return 0;
-		case WM_RBUTTONDOWN:
-			io.MouseDown[1] = !io.MouseDown[1];
-			return 0;
-		case WM_MBUTTONDOWN:
-			io.MouseDown[2] = !io.MouseDown[2];
-			return 0;
-		case WM_MOUSEWHEEL:
-			return 0;
-		case WM_MOUSEMOVE:
-			io.MousePos.x = (signed short)(lParam);
-			io.MousePos.y = (signed short)(lParam >> 16);
-			return 0;
-		}
 	}
 	return CallWindowProc(cheat->dx9.oriWndProc, hWnd, uMsg, wParam, lParam);
 }
@@ -40,9 +20,6 @@ LRESULT __stdcall hWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 
 void InitImGui(IDirect3DDevice9* pDevice) {
-
-#define ChisatoRed ImVec4(0.77255f, 0.09020f, 0.08235f, 1.00f);
-#define ChisatoRedDarker ImVec4(0.72549, 0.08627, 0.07451, 1.00f);
 	D3DDEVICE_CREATION_PARAMETERS CP;
 	pDevice->GetCreationParameters(&CP);
 	cheat->window = CP.hFocusWindow;
@@ -64,7 +41,7 @@ void InitImGui(IDirect3DDevice9* pDevice) {
 	colors[ImGuiCol_PopupBg] = ImVec4(0.08f, 0.08f, 0.08f, 0.94f);
 	colors[ImGuiCol_Border] = ImVec4(0.00f, 0.00f, 0.00f, 0.50f);
 	colors[ImGuiCol_BorderShadow] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-	colors[ImGuiCol_FrameBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.54f);
+	colors[ImGuiCol_FrameBg] = ImVec4(0.22f, 0.22f, 0.22f, 0.54f);
 	colors[ImGuiCol_FrameBgHovered] = ImVec4(0.37f, 0.14f, 0.14f, 0.67f);
 	colors[ImGuiCol_FrameBgActive] = ImVec4(0.39f, 0.20f, 0.20f, 0.67f);
 	colors[ImGuiCol_TitleBg] = ImVec4(0.04f, 0.04f, 0.04f, 1.00f);
@@ -137,26 +114,24 @@ void InitImGui(IDirect3DDevice9* pDevice) {
 }
 
 
-bool LoadTextureFromFile(IDirect3DDevice9* pDevice, const char* filename, PDIRECT3DTEXTURE9* out_texture, int* out_width, int* out_height);
-
+int FrameRate();
 HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 {
 	if (pDevice == nullptr)
 		return cheat->dx9.oEndScene(pDevice);
 
 	static bool Initialized = false;
-	int my_image_width = 0;
-	int my_image_height = 0;
-	PDIRECT3DTEXTURE9 my_texture = NULL;
+	int ChisatoIMGWidth = 666;
+	int ChisatoIMGHeight = 375;
+	static IDirect3DTexture9* texture = nullptr;
 	if (!Initialized)
 	{
 		InitImGui(pDevice);
 		
 		
-		if (my_texture == NULL)
+		if (texture == nullptr)
 		{
-			bool ret = LoadTextureFromFile(pDevice, "C:\\Users\\ProMa\\Downloads\\MyImage01.jpg", &my_texture, &my_image_width, &my_image_height);
-			IM_ASSERT(ret);
+			HRESULT result = D3DXCreateTextureFromFile(pDevice, skCrypt(L"chisatoEDcrop.png"), &texture);
 		}
 		
 		
@@ -172,29 +147,99 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 	cheat->dx9.drawlist = ImGui::GetBackgroundDrawList();
 	static ImVec2 windowSize = ImVec2(600, 300);
 	static ImVec2 windowPos = ImVec2(60, 60);
-
-
+	ImGuiIO io = ImGui::GetIO();
+	
+	static float bgOpacity = 0.1;
+	ImGui::SetNextWindowBgAlpha(bgOpacity);
+	
 	if (cheat->settings.ShowMenu && ImGui::Begin(skCrypt("Recoil Cheats | By Kye#5000"), (bool*)false, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar))
 	{
+		if (bgOpacity <= 0.5f)
+			bgOpacity += 0.01f;
+
+		
 		ImGui::SetWindowSize(windowSize, ImGuiCond_FirstUseEver);
 		ImGui::SetWindowPos(windowPos, ImGuiCond_FirstUseEver);
 
 		ImGui::Text(skCrypt("Toggle Menu with F1"));
 		ImGui::Text(skCrypt("Eject hack with END"));
 		
+		#define Column1Size 150
+		ImGui::Columns(2);
+		ImGui::SetColumnOffset(1, Column1Size);
+		static ImVec4 active = ImVec4((float)50 / 255, (float)49 / 255, (float)50 / 255, 1.f);
+		static ImVec4 inactive = ImVec4((float)31 / 255, (float)30 / 255, (float)31 / 255, 1.f);
+		static int TabButton = 0;
+		{
+			//Left Column
+			const char* buttons[] = { skCrypt("Visuals"), skCrypt("Aimbot"), skCrypt("Triggerbot"), skCrypt("Misc"), skCrypt("Skin Changer")};
+
+			for (size_t i = 0; i < IM_ARRAYSIZE(buttons); i++)
+			{
+				ImGui::Spacing();
+				ImGui::PushStyleColor(ImGuiCol_Button, TabButton == i ? active : inactive);
+				if (ImGui::Button(buttons[i], ImVec2(Column1Size - 15, 39)))
+					TabButton = i;
+
+			}
+
+
+
+			ImGui::PopStyleColor(IM_ARRAYSIZE(buttons));
+		}
+
+		ImGui::SetCursorPosX(Column1Size / 2 - 30);
+		ImGui::SetCursorPosY(ImGui::GetWindowHeight() - 30);
+		ImGui::Text(skCrypt("Kye#5000"));
+
+		ImGui::NextColumn();
+
+
+		{
+			//Right Column
+
+			switch (TabButton)
+			{
+			case 3:
+				ImGui::Checkbox(skCrypt("Show FPS"), &cheat->settings.ShowFPS);
+
+				break;
+			}
+		}
+		
+		
+
+		ImGui::End();
+
+		ImGui::ShowDemoWindow();
+	}
+	else
+	{
+		if (bgOpacity >= 0.0f)
+			bgOpacity -= 0.01f;
+	}
+	
+	ImU32 greyBg = ImGui::ColorConvertFloat4ToU32(ImVec4(0.1f, 0.1f, 0.1f, bgOpacity));
+	cheat->dx9.drawlist->AddRectFilled(ImVec2(0, 0), ImVec2(cheat->WindowSize.x, cheat->WindowSize.y), greyBg);
+	cheat->dx9.drawlist->AddImage((void*)texture, ImVec2((cheat->WindowSize.x - ChisatoIMGWidth / 1.1) + 100, cheat->WindowSize.y - ChisatoIMGHeight / 1.1), ImVec2(cheat->WindowSize.x + 100, cheat->WindowSize.y), ImVec2(0,0),ImVec2(1,1), ImGui::ColorConvertFloat4ToU32(ImVec4(1.f, 1.f, 1.f, bgOpacity)));
+	
+	ImGui::SetNextWindowBgAlpha(0.1f);
+	if (cheat->settings.ShowFPS && ImGui::Begin(skCrypt("FPS Counter"), nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoNav))
+	{
+		
+		ImGui::SetWindowSize(ImVec2(100,10), ImGuiCond_Always);
+		ImGui::SetWindowPos(ImVec2(25,25), ImGuiCond_Always);
+
+		
+		ImGui::Text(skCrypt("FPS: "));
+		ImGui::SameLine();
+		ImGui::Text(std::to_string(io.Framerate).c_str());
+		//Endscene is called twice every frame so half it to get accurate fps
+
 		ImGui::End();
 	}
-
 	
 	
-	ImGui::Begin("DirectX9 Texture Test");
-	ImGui::Text("pointer = %p", my_texture);
-	ImGui::Text("size = %d x %d", my_image_width, my_image_height);
-	ImGui::Image((void*)my_texture, ImVec2(my_image_width, my_image_height));
-	ImGui::End();
-	
-
-	//ImGui::ShowDemoWindow();
 	
 	ImGui::EndFrame();
 	ImGui::Render();

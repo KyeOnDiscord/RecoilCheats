@@ -55,6 +55,7 @@ public:
 	struct Settings
 	{
 		bool ShowMenu = true;
+		bool ShowFPS = false;
 	}settings;
 
 	
