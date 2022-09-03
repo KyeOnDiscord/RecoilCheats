@@ -20,19 +20,26 @@ DWORD WINAPI MainThread(HMODULE hModule)
 	
 	cheat = new Cheat();
 	cheat->Init();
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
 
 	cheat->hooks.endscene.EnableHook();
 
+	//Disable input on first launch because the menu is open
+	cheat->interfaces.InputSystem->EnableInput(!cheat->settings.ShowMenu);
+	cheat->interfaces.EngineClient->ClientCmd_Unrestricted("showconsole");
+	
 	while (!(GetKeyState(VK_END) & 0x8000))
 	{
 		cheat->Update();
 
-		Sleep(1000 / 10);
+		Sleep(1000 / 120);
 	}
-
-	
-	cheat->hooks.endscene.DisableHook();
-	Sleep(100);
+	cheat->settings.ShowMenu = false;
+	//Ejecting the cheat
+	cheat->hooks.endscene.DisableHook(); //Disable the end scene hook
+	cheat->interfaces.InputSystem->EnableInput(true); //Enable the input again so the user can click on buttons
+	cheat->interfaces.InputSystem->resetInputState();
 	SetWindowLongPtr(cheat->window, GWLP_WNDPROC, (LONG_PTR)cheat->dx9.oriWndProc);
 	ImGui_ImplDX9_Shutdown();
 	ImGui_ImplWin32_Shutdown();
@@ -40,7 +47,7 @@ DWORD WINAPI MainThread(HMODULE hModule)
 
 
 	//wait a bit
-	Sleep(300);
+	Sleep(500);
 #ifdef UseConsole
 	fclose(f);
 	FreeConsole();

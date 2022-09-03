@@ -51,7 +51,7 @@ namespace Hook
 			intptr_t gatewayRelativeAddr = ((intptr_t)src - (intptr_t)gateway) - 5;
 
 			// Add the jmp opcode to the end of the gateway
-			*(char*)((intptr_t)gateway + len) = 0xE9;
+			*(char*)((intptr_t)gateway + len) = (char)0xE9;
 
 			// Add the address to the jmp
 			*(intptr_t*)((intptr_t)gateway + len + 1) = gatewayRelativeAddr;

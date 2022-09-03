@@ -4,6 +4,9 @@
 #include "dx9.h"
 #include "hook.h"
 #include "vector.h"
+#include "sdk/sdk.h"
+
+class CCSPlayer;
 
 class Cheat
 {
@@ -16,7 +19,7 @@ private:
 	void InitDirectX9();
 	IDirect3DDevice9Vtbl* dx9Vtable;
 	void InitEndSceneHook();
-
+	void InitInterfaces();
 	
 public:
 
@@ -26,6 +29,7 @@ public:
 	//Updates the hack, called multiples times per frame
 	void Update();
 
+	bool WorldToScreen(const Vec3& position, Vec2& screenPosition);
 	
 	HWND window;
 	Vec2 WindowSize = Vec2();
@@ -33,6 +37,7 @@ public:
 	{
 		HMODULE client;
 		HMODULE engine;
+		HMODULE inputSystem;
 	} modules;
 
 	struct hooooks
@@ -56,7 +61,27 @@ public:
 	{
 		bool ShowMenu = true;
 		bool ShowFPS = false;
+		bool ShowPos = false;
+		bool ShowVelocity = false;
+		bool Watermark = true;
+		bool ThirdPerson = false;
+		bool Bhop = false;
+		int FOV = 90;
 	}settings;
 
+	struct esdeekay
+	{
+		sdk::IClientEntityList* ClientEntityList;
+		sdk::IVEngineClient* EngineClient;
+		sdk::IBaseClientDLL* BaseClientDLL;
+		sdk::IInputSystem* InputSystem;
+
+	}interfaces;
+
+	struct vars
+	{
+		void* viewMatrix;
+		CCSPlayer* LocalPlayer;
+	}variables;
 	
 };

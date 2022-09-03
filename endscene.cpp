@@ -1,7 +1,12 @@
 #include "pch.h"
 #include "endscene.h"
-
+#include "sdk/netvars.h"
+#include "Entity.h"
+#include "Util.h"
+#include "blueteafont.h"
 extern Cheat* cheat;
+
+#define round(x) Util::RoundToTwoDecimals(x)
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -9,27 +14,26 @@ LRESULT __stdcall hWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	if (cheat->settings.ShowMenu)
 	{
-		if (ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam))
-		{
-			return true;
-		}
+		ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam);
 	}
 	return CallWindowProc(cheat->dx9.oriWndProc, hWnd, uMsg, wParam, lParam);
 }
 
-
-
+static ImFont* blueTeaFont = nullptr;
 void InitImGui(IDirect3DDevice9* pDevice) {
 	D3DDEVICE_CREATION_PARAMETERS CP;
 	pDevice->GetCreationParameters(&CP);
 	cheat->window = CP.hFocusWindow;
 
-	// IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
 	io.IniFilename = NULL;
 	// io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-	io.Fonts->AddFontDefault();
+	ImFontConfig fontConfig = ImFontConfig();
+	fontConfig.FontDataOwnedByAtlas = false;
+
+	io.Fonts->AddFontDefault(&fontConfig);
+
+	blueTeaFont = io.Fonts->AddFontFromMemoryTTF(&BlueTeaFontBytes, sizeof(BlueTeaFontBytes), 24, &fontConfig);
 
 
 	ImVec4* colors = ImGui::GetStyle().Colors;
@@ -115,6 +119,7 @@ void InitImGui(IDirect3DDevice9* pDevice) {
 
 
 int FrameRate();
+
 HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 {
 	if (pDevice == nullptr)
@@ -133,10 +138,12 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 		{
 			HRESULT result = D3DXCreateTextureFromFile(pDevice, skCrypt(L"chisatoEDcrop.png"), &texture);
 		}
-		
-		
+
 		Initialized = true;
 	}
+
+	CCSPlayer* LocalPlayer = (CCSPlayer*)cheat->interfaces.ClientEntityList->GetClientEntity(cheat->interfaces.EngineClient->GetLocalPlayer());
+	cheat->variables.viewMatrix = (void*)cheat->interfaces.EngineClient->WorldToScreenMatrix();
 	
 
 	ImGui_ImplDX9_NewFrame();
@@ -149,9 +156,8 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 	static ImVec2 windowPos = ImVec2(60, 60);
 	ImGuiIO io = ImGui::GetIO();
 	
-	static float bgOpacity = 0.1;
+	static float bgOpacity = 0.1f;
 	ImGui::SetNextWindowBgAlpha(bgOpacity);
-	
 	if (cheat->settings.ShowMenu && ImGui::Begin(skCrypt("Recoil Cheats | By Kye#5000"), (bool*)false, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar))
 	{
 		if (bgOpacity <= 0.5f)
@@ -190,25 +196,27 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 
 		ImGui::SetCursorPosX(Column1Size / 2 - 30);
 		ImGui::SetCursorPosY(ImGui::GetWindowHeight() - 30);
-		ImGui::Text(skCrypt("Kye#5000"));
 
 		ImGui::NextColumn();
 
-
 		{
-			//Right Column
-
+			//Right Column			
 			switch (TabButton)
 			{
 			case 3:
+				ImGui::Checkbox(skCrypt("Show Watermark while playing"), &cheat->settings.Watermark);
 				ImGui::Checkbox(skCrypt("Show FPS"), &cheat->settings.ShowFPS);
+				ImGui::Checkbox(skCrypt("Show Position"), &cheat->settings.ShowPos);
+				ImGui::Checkbox(skCrypt("Show Velocity"), &cheat->settings.ShowVelocity);
+				ImGui::Checkbox(skCrypt("Bunny Hop"), &cheat->settings.Bhop);
+				if (ImGui::Checkbox(skCrypt("Third Person"), &cheat->settings.ThirdPerson))
+				{
 
+				}
+				ImGui::SliderInt("FOV:", &cheat->settings.FOV, 1, 160, "%d", ImGuiSliderFlags_AlwaysClamp);
 				break;
 			}
 		}
-		
-		
-
 		ImGui::End();
 
 		ImGui::ShowDemoWindow();
@@ -218,29 +226,158 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 		if (bgOpacity >= 0.0f)
 			bgOpacity -= 0.01f;
 	}
+
+	
+
 	
 	ImU32 greyBg = ImGui::ColorConvertFloat4ToU32(ImVec4(0.1f, 0.1f, 0.1f, bgOpacity));
 	cheat->dx9.drawlist->AddRectFilled(ImVec2(0, 0), ImVec2(cheat->WindowSize.x, cheat->WindowSize.y), greyBg);
-	cheat->dx9.drawlist->AddImage((void*)texture, ImVec2((cheat->WindowSize.x - ChisatoIMGWidth / 1.1) + 100, cheat->WindowSize.y - ChisatoIMGHeight / 1.1), ImVec2(cheat->WindowSize.x + 100, cheat->WindowSize.y), ImVec2(0,0),ImVec2(1,1), ImGui::ColorConvertFloat4ToU32(ImVec4(1.f, 1.f, 1.f, bgOpacity)));
+	cheat->dx9.drawlist->AddImage((void*)texture, ImVec2((cheat->WindowSize.x - ChisatoIMGWidth / 1.1f) + 100, cheat->WindowSize.y - ChisatoIMGHeight / 1.1f), ImVec2(cheat->WindowSize.x + 100, cheat->WindowSize.y), ImVec2(0,0),ImVec2(1,1), ImGui::ColorConvertFloat4ToU32(ImVec4(1.f, 1.f, 1.f, bgOpacity)));
 	
-	ImGui::SetNextWindowBgAlpha(0.1f);
-	if (cheat->settings.ShowFPS && ImGui::Begin(skCrypt("FPS Counter"), nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoNav))
+	ImGui::SetNextWindowBgAlpha(0.3f);
+
+	bool UsingCounter = cheat->settings.ShowFPS || cheat->settings.ShowPos || cheat->settings.ShowVelocity;
+
+	ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 1.f, 1.f, 1.f));
+	ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(168, 50, 50, 255));
+	if (UsingCounter && ImGui::Begin(skCrypt("Counter"), nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDecoration))
 	{
-		
-		ImGui::SetWindowSize(ImVec2(100,10), ImGuiCond_Always);
-		ImGui::SetWindowPos(ImVec2(25,25), ImGuiCond_Always);
 
-		
-		ImGui::Text(skCrypt("FPS: "));
-		ImGui::SameLine();
-		ImGui::Text(std::to_string(io.Framerate).c_str());
-		//Endscene is called twice every frame so half it to get accurate fps
+		static DWORD now = GetTickCount();
+		DWORD elapsed = GetTickCount() - now;
+		static Vec3 velocity = Vec3(0,0,0);
+		static Vec3 Pos = Vec3(0,0,0);
 
+		if (elapsed >= 100)//Update every 100ms
+		{
+			if (LocalPlayer != nullptr)
+			{
+				velocity = *LocalPlayer->m_vecVelocity();
+				Pos = *LocalPlayer->m_vecOrigin();
+			}
+			else
+			{
+				velocity = Vec3(0, 0, 0);
+				Pos = Vec3(0, 0, 0);
+			}
+
+			now = GetTickCount();
+		}
+
+		int WindowHeight = 0;
+		int WindowWidth = 100;
+		
+		if (cheat->settings.ShowMenu)
+		{
+			WindowHeight += 20;
+			ImGui::Text("Drag to move");
+		}
+		
+
+		if (cheat->settings.ShowFPS)
+		{
+			WindowHeight += 20;
+
+			std::stringstream ss;
+			ss << skCrypt("FPS: ") << (int)(FrameRate() / 3.0625);
+			ImGui::Text(ss.str().c_str());
+
+			//The fps counter was not accurate (i think it was getting called multiple times per frame)
+			//So i capped the fps at 48 then did (bigfpsnumberwhich was shown on fps counter) divided by 48 and then the result was 3.0625.
+
+		}
+
+		if (cheat->settings.ShowPos)
+		{
+			WindowHeight += 20;
+			std::stringstream ss;
+			
+			ss << skCrypt("Pos: ") << round(Pos.x) << " " << round(Pos.y) << " " << round(Pos.z);
+			ImGui::Text(ss.str().c_str());
+
+			ImVec2 textSize = ImGui::CalcTextSize(ss.str().c_str());
+			WindowWidth = max(WindowWidth, (int)textSize.x + 50);
+		}
+		
+		if (cheat->settings.ShowVelocity)
+		{
+			WindowHeight += 20;
+			std::stringstream ss;
+			
+			ss << skCrypt("Velocity: ") << round(velocity.x) << " " << round(velocity.y) << " " << round(velocity.z);
+			ImGui::Text(ss.str().c_str());
+
+			ImVec2 textSize = ImGui::CalcTextSize(ss.str().c_str());
+			WindowWidth = max(WindowWidth, (int)textSize.x + 50);
+		}
+		
+		ImGui::SetWindowSize(ImVec2((float)WindowWidth, (float)WindowHeight), ImGuiCond_Always);
+		
 		ImGui::End();
 	}
+	ImGui::PopStyleColor(2);
 	
+
+	//Show the watermark when the menu is open or the user toggles show watermark whiel playing
+	if (cheat->settings.ShowMenu || cheat->settings.Watermark)
+	{
+		ImGui::PushFont(blueTeaFont);
+		cheat->dx9.drawlist->AddRectFilled(ImVec2(9, 11), ImVec2(115, 30), IM_COL32(0, 0, 0, 50), 0.5f);
+		cheat->dx9.drawlist->AddText(ImVec2(10, 10), IM_COL32(168, 50, 50, 255), skCrypt("Recoil Cheats"));
+		
+		ImGui::PopFont();
+	}
+
 	
+
 	
+
+	
+
+	if (LocalPlayer != nullptr)//When the player is ingame
+	{
+		if (cheat->settings.FOV != *LocalPlayer->m_iDefaultFOV())
+			*LocalPlayer->m_iDefaultFOV() = cheat->settings.FOV;
+
+		if (cheat->settings.Bhop)
+		{
+#define	FL_ONGROUND				(1<<0)	// At rest / on the ground
+			uintptr_t* ForceJump = (uintptr_t*)(uintptr_t(cheat->modules.client) + 0x52878FC /*dwForceJump*/);
+
+			if (GetAsyncKeyState(VK_SPACE) && (*LocalPlayer->m_fFlags() & FL_ONGROUND))
+			{
+				*ForceJump = 6;
+			}
+			else
+			{
+				*ForceJump = 4;
+			}
+		}
+
+		for (int i = 0; i < cheat->interfaces.ClientEntityList->GetMaxEntities(); i++)
+		{
+			CCSPlayer* entity = (CCSPlayer*)cheat->interfaces.ClientEntityList->GetClientEntity(i);
+			if (entity == nullptr)
+				continue;
+
+			int ClassID = GetClassID(entity);
+
+			if (ClassID == EntID::CCSPlayer && entity->IsValid())
+			{
+				entity->m_vecOrigin();
+				Vec2 screen;
+				if (cheat->WorldToScreen(*entity->m_vecOrigin(), screen));
+				{
+					cheat->dx9.drawlist->AddLine(ImVec2(cheat->WindowSize.x / 2, cheat->WindowSize.y), ImVec2(screen.x, screen.y), IM_COL32(168, 50, 50, 255));
+				}
+				//std::cout << "Player " << i << std::endl;
+			}
+		}
+	}
+	
+
+
+
 	ImGui::EndFrame();
 	ImGui::Render();
 	ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());

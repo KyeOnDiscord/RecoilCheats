@@ -5,7 +5,9 @@
 #include <windows.h>
 #include <iostream>
 #include <stdio.h>
-
+#include <sstream>
+#include <string>
+#include <chrono>
 //Directx9
 #include <d3d9.h>
 #include <d3dx9.h>
@@ -21,3 +23,5 @@
 #include "imgui/imstb_rectpack.h"
 #include "imgui/imstb_textedit.h"
 #include "imgui/imstb_truetype.h"
+
+#include "sdk/sdk.h"

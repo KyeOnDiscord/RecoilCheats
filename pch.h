@@ -15,4 +15,7 @@
 #include "dx9.h"
 #include "hook.h"
 #include "endscene.h"
-#include <string>
+
+#include "sdk/sdk.h"
+#include "sdk/netvars.h"
+#include "Util.h"
