@@ -154,7 +154,7 @@ namespace sdk
 		virtual bool                  CullBox(const Vector& mins, const Vector& maxs) = 0;
 		virtual void                  Sound_ExtraUpdate(void) = 0;
 		virtual const char* GetGameDirectory(void) = 0;
-		virtual const VMatrix& WorldToScreenMatrix() = 0;
+		virtual const VMatrix* WorldToScreenMatrix() = 0;
 		virtual const VMatrix& WorldToViewMatrix() = 0;
 		// This version does NOT check against FCVAR_CLIENTCMD_CAN_EXECUTE.
 		void ClientCmd_Unrestricted(const char* command, const bool delayed = false)

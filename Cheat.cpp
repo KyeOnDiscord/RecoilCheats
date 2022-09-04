@@ -202,5 +202,5 @@ bool WorldToScreenCalculation(Vec3 in, Vec2& screen, sdk::VMatrix matrix, int wi
 
 bool Cheat::WorldToScreen(const Vec3& in, Vec2& out)
 {
-	return WorldToScreenCalculation(in, out, cheat->interfaces.EngineClient->WorldToScreenMatrix(), cheat->WindowSize.x, cheat->WindowSize.y);
+	return WorldToScreenCalculation(in, out, *cheat->viewMatrix, cheat->WindowSize.x, cheat->WindowSize.y);
 }

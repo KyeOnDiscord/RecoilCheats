@@ -120,6 +120,7 @@ void InitImGui(IDirect3DDevice9* pDevice) {
 
 int FrameRate();
 
+std::mutex mtx;           // mutex for critical section
 HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 {
 	if (pDevice == nullptr)
@@ -143,7 +144,6 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 	}
 
 	CCSPlayer* LocalPlayer = (CCSPlayer*)cheat->interfaces.ClientEntityList->GetClientEntity(cheat->interfaces.EngineClient->GetLocalPlayer());
-	//cheat->varrs.viewMatrix = cheat->interfaces.EngineClient->WorldToScreenMatrix();
 
 
 	ImGui_ImplDX9_NewFrame();
@@ -332,10 +332,10 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 
 
 
-
-
-	if (LocalPlayer != nullptr)//When the player is ingame
+	//mtx.try_lock() is so the drawing doesn't flicker if the user has multicore rendering on.
+	if (LocalPlayer != nullptr && mtx.try_lock())//When the player is ingame
 	{
+		cheat->viewMatrix = (sdk::VMatrix*)cheat->interfaces.EngineClient->WorldToScreenMatrix();
 		if (cheat->settings.FOV != *LocalPlayer->m_iDefaultFOV())
 			*LocalPlayer->m_iDefaultFOV() = cheat->settings.FOV;
 
@@ -369,9 +369,9 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 				{
 					cheat->dx9.drawlist->AddLine(ImVec2(cheat->WindowSize.x / 2, cheat->WindowSize.y), ImVec2(feetpos.x, feetpos.y), IM_COL32(168, 50, 50, 255));
 				}
-				//std::cout << "Player " << i << std::endl;
 			}
 		}
+		mtx.unlock();
 	}
 
 

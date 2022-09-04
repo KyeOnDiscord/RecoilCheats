@@ -22,7 +22,6 @@ private:
 	void InitInterfaces();
 
 public:
-	Cheat() = default;
 
 	//Initialzies the hack
 	void Init();
@@ -34,6 +33,10 @@ public:
 
 	HWND window;
 	Vec2 WindowSize = Vec2();
+
+	sdk::VMatrix* viewMatrix = nullptr;
+	CCSPlayer* LocalPlayer = nullptr;
+
 	struct Modules
 	{
 		HMODULE client;
@@ -78,11 +81,5 @@ public:
 		sdk::IInputSystem* InputSystem;
 
 	}interfaces;
-
-	struct varrrrrs
-	{
-		//sdk::VMatrix& viewMatrix;
-		//CCSPlayer* LocalPlayer;
-	}varrs;
 
 };
