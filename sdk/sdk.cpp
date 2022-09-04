@@ -6,7 +6,7 @@ namespace sdk
 {
 	void* GetInterface(HMODULE hModule, const char* interfacename)
 	{
-		tCreateInterface CreateInterface = (tCreateInterface)GetProcAddress(hModule, "CreateInterface");
+		tCreateInterface CreateInterface = (tCreateInterface)GetProcAddress(hModule, skCrypt("CreateInterface"));
 
 		int returnCode = 0;
 		void* interface_ = CreateInterface(interfacename, &returnCode);

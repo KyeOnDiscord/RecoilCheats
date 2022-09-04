@@ -19,15 +19,15 @@ void Cheat::Update()
 	{
 		this->settings.ShowMenu = !settings.ShowMenu;
 
-		
-		cheat->interfaces.InputSystem->resetInputState();
+
+		this->interfaces.InputSystem->resetInputState();
 		//Disables clicking on menu, etc when menu is shown
-		cheat->interfaces.InputSystem->EnableInput(!cheat->settings.ShowMenu);
-		
-		cheat->interfaces.EngineClient->ClientCmd_Unrestricted(cheat->settings.ShowMenu ? "showconsole" : "hideconsole");
+		this->interfaces.InputSystem->EnableInput(!this->settings.ShowMenu);
+
+		this->interfaces.EngineClient->ClientCmd_Unrestricted(this->settings.ShowMenu ? "showconsole" : "hideconsole");
 	}
 
-	cheat->dx9.UpdateOverlayPosition();
+	this->dx9.UpdateOverlayPosition();
 }
 
 void Cheat::InitModules()
@@ -41,25 +41,25 @@ void Cheat::InitDirectX9()
 {
 	void* d3d9Device[119];
 	this->dx9.GetD3D9Device(d3d9Device, sizeof(d3d9Device));
-	
+
 	this->dx9Vtable = (IDirect3DDevice9Vtbl*)d3d9Device;
 }
 
 void Cheat::InitEndSceneHook()
 {
-	this->hooks.endscene = Hook::Hook((PBYTE)this->dx9Vtable->EndScene, (PBYTE)hkEndScene, (PBYTE)&cheat->dx9.oEndScene, 7);
+	this->hooks.endscene = Hook::Hook((PBYTE)this->dx9Vtable->EndScene, (PBYTE)hkEndScene, (PBYTE)&this->dx9.oEndScene, 7);
 }
 
 void Cheat::InitInterfaces()
 {
 	//client.dll interfaces
-	this->interfaces.ClientEntityList = (sdk::IClientEntityList*)sdk::GetInterface(cheat->modules.client, skCrypt("VClientEntityList003"));
-	this->interfaces.BaseClientDLL = (sdk::IBaseClientDLL*)sdk::GetInterface(cheat->modules.client, skCrypt("VClient018"));
-	this->interfaces.InputSystem = (sdk::IInputSystem*)sdk::GetInterface(cheat->modules.inputSystem, skCrypt("InputSystemVersion001"));
-	
+	this->interfaces.ClientEntityList = (sdk::IClientEntityList*)sdk::GetInterface(this->modules.client, skCrypt("VClientEntityList003"));
+	this->interfaces.BaseClientDLL = (sdk::IBaseClientDLL*)sdk::GetInterface(this->modules.client, skCrypt("VClient018"));
+	this->interfaces.InputSystem = (sdk::IInputSystem*)sdk::GetInterface(this->modules.inputSystem, skCrypt("InputSystemVersion001"));
+
 	//engine.dll interfaces
-	this->interfaces.EngineClient = (sdk::IVEngineClient*)sdk::GetInterface(cheat->modules.engine, skCrypt("VEngineClient014"));
-	
+	this->interfaces.EngineClient = (sdk::IVEngineClient*)sdk::GetInterface(this->modules.engine, skCrypt("VEngineClient014"));
+
 }
 
 
@@ -80,9 +80,9 @@ BOOL CALLBACK enumWind(HWND handle, LPARAM lp)
 
 void Cheat::directx9::UpdateOverlayPosition()
 {
-	static int width, height;
-	cheat->interfaces.EngineClient->GetScreenSize(width, height);	
-	cheat->WindowSize = Vec2((float)width,(float)height);
+	int width, height;
+	cheat->interfaces.EngineClient->GetScreenSize(width, height);
+	cheat->WindowSize = Vec2((float)width, (float)height);
 }
 
 
@@ -136,7 +136,7 @@ bool Cheat::directx9::GetD3D9Device(void** pTable, size_t size)
 #pragma comment(lib, "D3dx9")
 
 // Simple helper function to load an image into a DX9 texture with common settings
-bool LoadTextureFromFile(IDirect3DDevice9* pDevice,const char* filename, PDIRECT3DTEXTURE9* out_texture, int* out_width, int* out_height)
+bool LoadTextureFromFile(IDirect3DDevice9* pDevice, const char* filename, PDIRECT3DTEXTURE9* out_texture, int* out_width, int* out_height)
 {
 	// Load texture from disk
 	PDIRECT3DTEXTURE9 texture;
@@ -158,67 +158,49 @@ bool LoadTextureFromFile(IDirect3DDevice9* pDevice,const char* filename, PDIRECT
 int FrameRate()
 {
 
-		static int fps = 0;
-		static int count = 0;
-		using namespace std::chrono;
-		auto now = high_resolution_clock::now();
-		static auto last = high_resolution_clock::now();
-		count++;
+	static int fps = 0;
+	static int count = 0;
+	using namespace std::chrono;
+	auto now = high_resolution_clock::now();
+	static auto last = high_resolution_clock::now();
+	count++;
 
-		if (duration_cast<milliseconds>(now - last).count() > 1000)
-		{
-			fps = count;
-			count = 0;
-			last = now;
-		}
-
-		return fps;
-}
-bool FrustomTransform(const sdk::VMatrix& worldToSurface, const Vec3& point, Vec2& screen) {
-	
-	screen.x = worldToSurface.m[0][0] * point.x + worldToSurface.m[0][1] * point.y + worldToSurface.m[0][2] * point.z + worldToSurface.m[0][3];
-	screen.y = worldToSurface.m[1][0] * point.x + worldToSurface.m[1][1] * point.y + worldToSurface.m[1][2] * point.z + worldToSurface.m[1][3];
-	auto w = worldToSurface.m[3][0] * point.x + worldToSurface.m[3][1] * point.y + worldToSurface.m[3][2] * point.z + worldToSurface.m[3][3];
-
-	bool facing{};
-	if (w < 0.001f)
+	if (duration_cast<milliseconds>(now - last).count() > 1000)
 	{
-		facing = false;
-		screen.x *= 100000;
-		screen.y *= 100000;
-	}
-	else
-	{
-		facing = true;
-		float invw = 1.0f / w;
-		screen.x *= invw;
-		screen.y *= invw;
+		fps = count;
+		count = 0;
+		last = now;
 	}
 
-	return facing;
+	return fps;
 }
 
 
-bool Cheat::WorldToScreen(const Vec3& position, Vec2& screenPosition) 
+bool WorldToScreenCalculation(Vec3 in, Vec2& screen, sdk::VMatrix matrix, int windowWidth, int windowHeight)
 {
+	//Matrix-vector Product, multiplying world(eye) coordinates by projection matrix = clipCoords
+	Vec4 clipCoords;
+	clipCoords.x = matrix.m[0][0] * in.x + matrix.m[0][1] * in.y + matrix.m[0][2] * in.z + matrix.m[0][3];
+	clipCoords.y = matrix.m[1][0] * in.x + matrix.m[1][1] * in.y + matrix.m[1][2] * in.z + matrix.m[1][3];
+	clipCoords.z = 0.0f;
+	clipCoords.w = matrix.m[3][0] * in.x + matrix.m[3][1] * in.y + matrix.m[3][2] * in.z + matrix.m[3][3];
 
-	sdk::VMatrix worldToScreenMatrix = (sdk::VMatrix)this->interfaces.EngineClient->WorldToScreenMatrix();
-
-	auto facing{ FrustomTransform(worldToScreenMatrix, position, screenPosition) };
-
-	int screenWidth = this->WindowSize.x;
-	int screenHeight = this->WindowSize.y;
-	screenPosition.x = 0.5f * (1.0f + screenPosition.x) * screenWidth;
-	screenPosition.y = 0.5f * (1.0f - screenPosition.y) * screenHeight;
-
-	auto visible{ (screenPosition.x >= 0 && screenPosition.x <= screenWidth) &&
-		screenPosition.y >= 0 && screenPosition.y <= screenHeight };
-	if (!facing || !visible)
-	{
-		screenPosition.x = -640;
-		screenPosition.y = -640;
+	if (clipCoords.w < 0.1f)
 		return false;
-	}
 
+	//perspective division, dividing by clip.W = Normalized Device Coordinates
+	Vec3 NDC;
+	NDC.x = clipCoords.x / clipCoords.w;
+	NDC.y = clipCoords.y / clipCoords.w;
+	NDC.z = clipCoords.z / clipCoords.w;
+
+	screen.x = (windowWidth / 2 * NDC.x) + (NDC.x + windowWidth / 2);
+	screen.y = -(windowHeight / 2 * NDC.y) + (NDC.y + windowHeight / 2);
 	return true;
+}
+
+
+bool Cheat::WorldToScreen(const Vec3& in, Vec2& out)
+{
+	return WorldToScreenCalculation(in, out, cheat->interfaces.EngineClient->WorldToScreenMatrix(), cheat->WindowSize.x, cheat->WindowSize.y);
 }

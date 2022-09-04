@@ -12,10 +12,10 @@ bool CCSPlayer::IsMoving()
 
 bool CCSPlayer::IsValid()
 {
-		if (this == nullptr || this == cheat->variables.LocalPlayer ||/* ent->isDormant ||*/ *this->m_iHealth() <= 0)
-			return false;
+	if (this == nullptr || this == (CCSPlayer*)cheat->interfaces.EngineClient->GetLocalPlayer() ||/* ent->isDormant ||*/ *this->m_iHealth() <= 0)
+		return false;
 
-		return true;
+	return true;
 }
 
 int GetClassID(CCSPlayer* ent) //Creates our class ID for the entity we put inside

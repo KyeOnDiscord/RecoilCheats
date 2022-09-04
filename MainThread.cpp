@@ -17,7 +17,7 @@ DWORD WINAPI MainThread(HMODULE hModule)
 	AllocConsole();
 	freopen_s(&f, "CONOUT$", "w", stdout);
 #endif // UseConsole
-	
+
 	cheat = new Cheat();
 	cheat->Init();
 	IMGUI_CHECKVERSION();
@@ -27,8 +27,8 @@ DWORD WINAPI MainThread(HMODULE hModule)
 
 	//Disable input on first launch because the menu is open
 	cheat->interfaces.InputSystem->EnableInput(!cheat->settings.ShowMenu);
-	cheat->interfaces.EngineClient->ClientCmd_Unrestricted("showconsole");
-	
+	cheat->interfaces.EngineClient->ClientCmd_Unrestricted(skCrypt("showconsole"));
+
 	while (!(GetKeyState(VK_END) & 0x8000))
 	{
 		cheat->Update();
@@ -47,12 +47,13 @@ DWORD WINAPI MainThread(HMODULE hModule)
 
 
 	//wait a bit
-	Sleep(500);
+	Sleep(1000);
 #ifdef UseConsole
-	fclose(f);
+	if (f != NULL)
+		fclose(f);
 	FreeConsole();
 #endif // UseConsole
-
+	Sleep(1000);
 
 	FreeLibraryAndExitThread(hModule, 0);
 }

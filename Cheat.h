@@ -20,8 +20,9 @@ private:
 	IDirect3DDevice9Vtbl* dx9Vtable;
 	void InitEndSceneHook();
 	void InitInterfaces();
-	
+
 public:
+	Cheat() = default;
 
 	//Initialzies the hack
 	void Init();
@@ -30,7 +31,7 @@ public:
 	void Update();
 
 	bool WorldToScreen(const Vec3& position, Vec2& screenPosition);
-	
+
 	HWND window;
 	Vec2 WindowSize = Vec2();
 	struct Modules
@@ -46,7 +47,7 @@ public:
 	} hooks;
 
 	struct directx9
-	{		
+	{
 	public:
 		bool GetD3D9Device(void** pTable, size_t size);
 		void UpdateOverlayPosition();
@@ -78,10 +79,10 @@ public:
 
 	}interfaces;
 
-	struct vars
+	struct varrrrrs
 	{
-		void* viewMatrix;
-		CCSPlayer* LocalPlayer;
-	}variables;
-	
+		//sdk::VMatrix& viewMatrix;
+		//CCSPlayer* LocalPlayer;
+	}varrs;
+
 };

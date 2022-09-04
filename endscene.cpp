@@ -132,8 +132,8 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 	if (!Initialized)
 	{
 		InitImGui(pDevice);
-		
-		
+
+
 		if (texture == nullptr)
 		{
 			HRESULT result = D3DXCreateTextureFromFile(pDevice, skCrypt(L"chisatoEDcrop.png"), &texture);
@@ -143,8 +143,8 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 	}
 
 	CCSPlayer* LocalPlayer = (CCSPlayer*)cheat->interfaces.ClientEntityList->GetClientEntity(cheat->interfaces.EngineClient->GetLocalPlayer());
-	cheat->variables.viewMatrix = (void*)cheat->interfaces.EngineClient->WorldToScreenMatrix();
-	
+	//cheat->varrs.viewMatrix = cheat->interfaces.EngineClient->WorldToScreenMatrix();
+
 
 	ImGui_ImplDX9_NewFrame();
 	ImGui_ImplWin32_NewFrame();
@@ -155,7 +155,7 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 	static ImVec2 windowSize = ImVec2(600, 300);
 	static ImVec2 windowPos = ImVec2(60, 60);
 	ImGuiIO io = ImGui::GetIO();
-	
+
 	static float bgOpacity = 0.1f;
 	ImGui::SetNextWindowBgAlpha(bgOpacity);
 	if (cheat->settings.ShowMenu && ImGui::Begin(skCrypt("Recoil Cheats | By Kye#5000"), (bool*)false, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar))
@@ -163,14 +163,14 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 		if (bgOpacity <= 0.5f)
 			bgOpacity += 0.01f;
 
-		
+
 		ImGui::SetWindowSize(windowSize, ImGuiCond_FirstUseEver);
 		ImGui::SetWindowPos(windowPos, ImGuiCond_FirstUseEver);
 
 		ImGui::Text(skCrypt("Toggle Menu with F1"));
 		ImGui::Text(skCrypt("Eject hack with END"));
-		
-		#define Column1Size 150
+
+#define Column1Size 150
 		ImGui::Columns(2);
 		ImGui::SetColumnOffset(1, Column1Size);
 		static ImVec4 active = ImVec4((float)50 / 255, (float)49 / 255, (float)50 / 255, 1.f);
@@ -178,7 +178,7 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 		static int TabButton = 0;
 		{
 			//Left Column
-			const char* buttons[] = { skCrypt("Visuals"), skCrypt("Aimbot"), skCrypt("Triggerbot"), skCrypt("Misc"), skCrypt("Skin Changer")};
+			const char* buttons[] = { skCrypt("Visuals"), skCrypt("Aimbot"), skCrypt("Triggerbot"), skCrypt("Misc"), skCrypt("Skin Changer") };
 
 			for (size_t i = 0; i < IM_ARRAYSIZE(buttons); i++)
 			{
@@ -227,13 +227,13 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 			bgOpacity -= 0.01f;
 	}
 
-	
 
-	
+
+
 	ImU32 greyBg = ImGui::ColorConvertFloat4ToU32(ImVec4(0.1f, 0.1f, 0.1f, bgOpacity));
 	cheat->dx9.drawlist->AddRectFilled(ImVec2(0, 0), ImVec2(cheat->WindowSize.x, cheat->WindowSize.y), greyBg);
-	cheat->dx9.drawlist->AddImage((void*)texture, ImVec2((cheat->WindowSize.x - ChisatoIMGWidth / 1.1f) + 100, cheat->WindowSize.y - ChisatoIMGHeight / 1.1f), ImVec2(cheat->WindowSize.x + 100, cheat->WindowSize.y), ImVec2(0,0),ImVec2(1,1), ImGui::ColorConvertFloat4ToU32(ImVec4(1.f, 1.f, 1.f, bgOpacity)));
-	
+	cheat->dx9.drawlist->AddImage((void*)texture, ImVec2((cheat->WindowSize.x - ChisatoIMGWidth / 1.1f) + 100, cheat->WindowSize.y - ChisatoIMGHeight / 1.1f), ImVec2(cheat->WindowSize.x + 100, cheat->WindowSize.y), ImVec2(0, 0), ImVec2(1, 1), ImGui::ColorConvertFloat4ToU32(ImVec4(1.f, 1.f, 1.f, bgOpacity)));
+
 	ImGui::SetNextWindowBgAlpha(0.3f);
 
 	bool UsingCounter = cheat->settings.ShowFPS || cheat->settings.ShowPos || cheat->settings.ShowVelocity;
@@ -245,8 +245,8 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 
 		static DWORD now = GetTickCount();
 		DWORD elapsed = GetTickCount() - now;
-		static Vec3 velocity = Vec3(0,0,0);
-		static Vec3 Pos = Vec3(0,0,0);
+		static Vec3 velocity = Vec3(0, 0, 0);
+		static Vec3 Pos = Vec3(0, 0, 0);
 
 		if (elapsed >= 100)//Update every 100ms
 		{
@@ -266,13 +266,13 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 
 		int WindowHeight = 0;
 		int WindowWidth = 100;
-		
+
 		if (cheat->settings.ShowMenu)
 		{
 			WindowHeight += 20;
 			ImGui::Text("Drag to move");
 		}
-		
+
 
 		if (cheat->settings.ShowFPS)
 		{
@@ -291,32 +291,32 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 		{
 			WindowHeight += 20;
 			std::stringstream ss;
-			
+
 			ss << skCrypt("Pos: ") << round(Pos.x) << " " << round(Pos.y) << " " << round(Pos.z);
 			ImGui::Text(ss.str().c_str());
 
 			ImVec2 textSize = ImGui::CalcTextSize(ss.str().c_str());
 			WindowWidth = max(WindowWidth, (int)textSize.x + 50);
 		}
-		
+
 		if (cheat->settings.ShowVelocity)
 		{
 			WindowHeight += 20;
 			std::stringstream ss;
-			
+
 			ss << skCrypt("Velocity: ") << round(velocity.x) << " " << round(velocity.y) << " " << round(velocity.z);
 			ImGui::Text(ss.str().c_str());
 
 			ImVec2 textSize = ImGui::CalcTextSize(ss.str().c_str());
 			WindowWidth = max(WindowWidth, (int)textSize.x + 50);
 		}
-		
+
 		ImGui::SetWindowSize(ImVec2((float)WindowWidth, (float)WindowHeight), ImGuiCond_Always);
-		
+
 		ImGui::End();
 	}
 	ImGui::PopStyleColor(2);
-	
+
 
 	//Show the watermark when the menu is open or the user toggles show watermark whiel playing
 	if (cheat->settings.ShowMenu || cheat->settings.Watermark)
@@ -324,15 +324,15 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 		ImGui::PushFont(blueTeaFont);
 		cheat->dx9.drawlist->AddRectFilled(ImVec2(9, 11), ImVec2(115, 30), IM_COL32(0, 0, 0, 50), 0.5f);
 		cheat->dx9.drawlist->AddText(ImVec2(10, 10), IM_COL32(168, 50, 50, 255), skCrypt("Recoil Cheats"));
-		
+
 		ImGui::PopFont();
 	}
 
-	
 
-	
 
-	
+
+
+
 
 	if (LocalPlayer != nullptr)//When the player is ingame
 	{
@@ -364,17 +364,16 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 
 			if (ClassID == EntID::CCSPlayer && entity->IsValid())
 			{
-				entity->m_vecOrigin();
-				Vec2 screen;
-				if (cheat->WorldToScreen(*entity->m_vecOrigin(), screen));
+				Vec2 feetpos;
+				if (cheat->WorldToScreen(*entity->m_vecOrigin(), feetpos))
 				{
-					cheat->dx9.drawlist->AddLine(ImVec2(cheat->WindowSize.x / 2, cheat->WindowSize.y), ImVec2(screen.x, screen.y), IM_COL32(168, 50, 50, 255));
+					cheat->dx9.drawlist->AddLine(ImVec2(cheat->WindowSize.x / 2, cheat->WindowSize.y), ImVec2(feetpos.x, feetpos.y), IM_COL32(168, 50, 50, 255));
 				}
 				//std::cout << "Player " << i << std::endl;
 			}
 		}
 	}
-	
+
 
 
 
@@ -382,6 +381,6 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 	ImGui::Render();
 	ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
 
-	
+
 	return cheat->dx9.oEndScene(pDevice);
 }
