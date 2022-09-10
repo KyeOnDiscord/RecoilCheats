@@ -84,6 +84,9 @@
     <ClInclude Include="blueteafont.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="features\LeftKnife.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -135,6 +138,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Entity.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="features\LeftKnife.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="features\NoRecoil.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -1,6 +1,9 @@
 #include "pch.h"
 #include "Cheat.h"
 #include "sdk/sdk.h"
+#include <D3dx9tex.h>
+#include <chrono>
+#pragma comment(lib, "D3dx9")
 extern Cheat* cheat;
 
 
@@ -8,6 +11,7 @@ void Cheat::Init()
 {
 	this->InitModules();
 	this->InitInterfaces();
+	this->InitOffsets();
 	this->InitDirectX9();
 	this->InitEndSceneHook();
 }
@@ -24,7 +28,7 @@ void Cheat::Update()
 		//Disables clicking on menu, etc when menu is shown
 		this->interfaces.InputSystem->EnableInput(!this->settings.ShowMenu);
 
-		this->interfaces.EngineClient->ClientCmd_Unrestricted(this->settings.ShowMenu ? "showconsole" : "hideconsole");
+		this->interfaces.EngineClient->ClientCmd_Unrestricted(this->settings.ShowMenu ? skCrypt("showconsole") : skCrypt("hideconsole"));
 	}
 
 	this->dx9.UpdateOverlayPosition();
@@ -60,8 +64,18 @@ void Cheat::InitInterfaces()
 	//engine.dll interfaces
 	this->interfaces.EngineClient = (sdk::IVEngineClient*)sdk::GetInterface(this->modules.engine, skCrypt("VEngineClient014"));
 
+
+	this->interfaces.WeaponSystem = *(sdk::IWeaponSystem**)(this->PatternScan(this->modules.client, skCrypt("8B 35 ? ? ? ? FF 10 0F B7 C0")) + 2);
+
+
+
 }
 
+
+void Cheat::InitOffsets()
+{
+	//this->offsets.dwClientState_ViewAngles = (uintptr_t)this->PatternScan(this->modules.client, skCrypt("8B 35 ? ? ? ? FF 10 0F B7 C0")) + 2;
+}
 
 
 BOOL CALLBACK enumWind(HWND handle, LPARAM lp)
@@ -131,28 +145,40 @@ bool Cheat::directx9::GetD3D9Device(void** pTable, size_t size)
 }
 
 
-#include <D3dx9tex.h>
-#include <chrono>
-#pragma comment(lib, "D3dx9")
+
 
 // Simple helper function to load an image into a DX9 texture with common settings
-bool LoadTextureFromFile(IDirect3DDevice9* pDevice, const char* filename, PDIRECT3DTEXTURE9* out_texture, int* out_width, int* out_height)
+bool LoadTextureFromFile(IDirect3DDevice9* pDevice, LPCWSTR filename, IDirect3DTexture9* out_texture, int* out_width, int* out_height)
 {
 	// Load texture from disk
-	PDIRECT3DTEXTURE9 texture;
-	HRESULT hr = D3DXCreateTextureFromFileA(pDevice, filename, &texture);
+
+	HRESULT hr = D3DXCreateTextureFromFile(pDevice, filename, &out_texture);
 	if (hr != S_OK)
 		return false;
 
 	// Retrieve description of the texture surface so we can access its size
 	D3DSURFACE_DESC my_image_desc;
-	texture->GetLevelDesc(0, &my_image_desc);
-	*out_texture = texture;
+	out_texture->GetLevelDesc(0, &my_image_desc);
 	*out_width = (int)my_image_desc.Width;
 	*out_height = (int)my_image_desc.Height;
 	return true;
 }
 
+bool LoadTextureFromMemory(IDirect3DDevice9* pDevice, LPVOID pSrcData, IDirect3DTexture9* out_texture, int* out_width, int* out_height)
+{
+	// Load texture from disk
+
+	HRESULT hr = D3DXCreateTextureFromFileInMemory(pDevice, pSrcData, sizeof(pSrcData), &out_texture);
+	if (hr != S_OK)
+		return false;
+
+	// Retrieve description of the texture surface so we can access its size
+	D3DSURFACE_DESC my_image_desc;
+	out_texture->GetLevelDesc(0, &my_image_desc);
+	*out_width = (int)my_image_desc.Width;
+	*out_height = (int)my_image_desc.Height;
+	return true;
+}
 
 //https://www.unknowncheats.me/forum/counterstrike-global-offensive/291757-fps-indicator.html
 int FrameRate()
@@ -202,5 +228,59 @@ bool WorldToScreenCalculation(Vec3 in, Vec2& screen, sdk::VMatrix matrix, int wi
 
 bool Cheat::WorldToScreen(const Vec3& in, Vec2& out)
 {
-	return WorldToScreenCalculation(in, out, *cheat->viewMatrix, cheat->WindowSize.x, cheat->WindowSize.y);
+	return WorldToScreenCalculation(in, out, *cheat->viewMatrix, (int)cheat->WindowSize.x, (int)cheat->WindowSize.y);
+}
+
+
+std::uint8_t* Cheat::PatternScan(void* module, const char* signature)
+{
+	static auto pattern_to_byte = [](const char* pattern) {
+		auto bytes = std::vector<int>{};
+		auto start = const_cast<char*>(pattern);
+		auto end = const_cast<char*>(pattern) + strlen(pattern);
+
+		for (auto current = start; current < end; ++current) {
+			if (*current == '?') {
+				++current;
+				if (*current == '?')
+					++current;
+				bytes.push_back(-1);
+			}
+			else {
+				bytes.push_back(strtoul(current, &current, 16));
+			}
+		}
+		return bytes;
+	};
+
+	auto dosHeader = (PIMAGE_DOS_HEADER)module;
+	auto ntHeaders = (PIMAGE_NT_HEADERS)((std::uint8_t*)module + dosHeader->e_lfanew);
+
+	auto sizeOfImage = ntHeaders->OptionalHeader.SizeOfImage;
+	auto patternBytes = pattern_to_byte(signature);
+	auto scanBytes = reinterpret_cast<std::uint8_t*>(module);
+
+	auto s = patternBytes.size();
+	auto d = patternBytes.data();
+
+	for (auto i = 0ul; i < sizeOfImage - s; ++i) {
+		bool found = true;
+		for (auto j = 0ul; j < s; ++j) {
+			if (scanBytes[i + j] != d[j] && d[j] != -1) {
+				found = false;
+				break;
+			}
+		}
+		if (found) {
+			return &scanBytes[i];
+		}
+	}
+	return nullptr;
+}
+
+Vec3* Cheat::GetViewAngles()
+{
+	uintptr_t dwClientState = *(uintptr_t*)((uintptr_t)this->modules.engine + 0x58CFDC);
+
+	return (Vec3*)(dwClientState + 0x4D90/*dwClientState_viewAngles*/);
 }

@@ -103,6 +103,7 @@
     <ClInclude Include="dx9.h" />
     <ClInclude Include="endscene.h" />
     <ClInclude Include="Entity.h" />
+    <ClInclude Include="features\LeftKnife.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="hook.h" />
     <ClInclude Include="imgui\imconfig.h" />
@@ -126,6 +127,14 @@
     <ClCompile Include="Cheat.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="endscene.cpp" />
+    <ClCompile Include="features\LeftKnife.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="features\NoRecoil.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="hook.cpp" />
     <ClCompile Include="imgui\imgui.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
@@ -162,9 +171,11 @@
     </ClCompile>
     <ClCompile Include="Entity.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="sdk\netvars.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="sdk\sdk.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>

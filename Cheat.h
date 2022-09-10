@@ -20,6 +20,7 @@ private:
 	IDirect3DDevice9Vtbl* dx9Vtable;
 	void InitEndSceneHook();
 	void InitInterfaces();
+	void InitOffsets();
 
 public:
 
@@ -28,8 +29,9 @@ public:
 
 	//Updates the hack, called multiples times per frame
 	void Update();
-
+	std::uint8_t* PatternScan(void* module, const char* signature);
 	bool WorldToScreen(const Vec3& position, Vec2& screenPosition);
+	Vec3* GetViewAngles();
 
 	HWND window;
 	Vec2 WindowSize = Vec2();
@@ -67,9 +69,13 @@ public:
 		bool ShowFPS = false;
 		bool ShowPos = false;
 		bool ShowVelocity = false;
+		bool ShowViewAngles = false;
 		bool Watermark = true;
 		bool ThirdPerson = false;
+		bool LeftHandKnife = false;
 		bool Bhop = false;
+		bool NoRecoil = false;
+		int Snaplines = 0;
 		int FOV = 90;
 	}settings;
 
@@ -79,7 +85,13 @@ public:
 		sdk::IVEngineClient* EngineClient;
 		sdk::IBaseClientDLL* BaseClientDLL;
 		sdk::IInputSystem* InputSystem;
+		sdk::IWeaponSystem* WeaponSystem;
 
 	}interfaces;
 
+
+	struct offsets
+	{
+		uintptr_t dwClientState_ViewAngles = 0;
+	}offsets;
 };

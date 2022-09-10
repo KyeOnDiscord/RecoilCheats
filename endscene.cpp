@@ -119,6 +119,9 @@ void InitImGui(IDirect3DDevice9* pDevice) {
 
 
 int FrameRate();
+bool LoadTextureFromFile(IDirect3DDevice9* pDevice, LPCWSTR filename, IDirect3DTexture9* out_texture, int* out_width, int* out_height);
+void LeftHandKnife();
+void NoRecoil();
 
 std::mutex mtx;           // mutex for critical section
 HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
@@ -127,8 +130,7 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 		return cheat->dx9.oEndScene(pDevice);
 
 	static bool Initialized = false;
-	int ChisatoIMGWidth = 666;
-	int ChisatoIMGHeight = 375;
+	static int ChisatoIMGWidth, ChisatoIMGHeight;
 	static IDirect3DTexture9* texture = nullptr;
 	if (!Initialized)
 	{
@@ -137,13 +139,14 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 
 		if (texture == nullptr)
 		{
-			HRESULT result = D3DXCreateTextureFromFile(pDevice, skCrypt(L"chisatoEDcrop.png"), &texture);
+			LoadTextureFromFile(pDevice, skCrypt(L"chisatoEDcrop.png"), texture, &ChisatoIMGWidth, &ChisatoIMGHeight);
+			//HRESULT result = D3DXCreateTextureFromFile(pDevice, skCrypt(L"chisatoEDcrop.png"), &texture);
 		}
 
 		Initialized = true;
 	}
 
-	CCSPlayer* LocalPlayer = (CCSPlayer*)cheat->interfaces.ClientEntityList->GetClientEntity(cheat->interfaces.EngineClient->GetLocalPlayer());
+	cheat->LocalPlayer = (CCSPlayer*)cheat->interfaces.ClientEntityList->GetClientEntity(cheat->interfaces.EngineClient->GetLocalPlayer());
 
 
 	ImGui_ImplDX9_NewFrame();
@@ -203,23 +206,44 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 			//Right Column			
 			switch (TabButton)
 			{
+				{
+			case 0:
+				bool SnaplineMenu = false;
+				if (ImGui::CollapsingHeader(skCrypt("Snaplines"), SnaplineMenu))
+				{
+					const char* SnaplineItems[]{ skCrypt("None"),skCrypt("Top"), skCrypt("Middle"), skCrypt("Bottom") };
+					ImGui::Indent(3.f);
+					ImGui::Text(skCrypt("Snapline Position:"));
+					ImGui::SameLine();
+					ImGui::Combo(skCrypt("###SnaplinesComboBox"), &cheat->settings.Snaplines, SnaplineItems, IM_ARRAYSIZE(SnaplineItems));
+
+				}
+				break;
+				}
 			case 3:
 				ImGui::Checkbox(skCrypt("Show Watermark while playing"), &cheat->settings.Watermark);
 				ImGui::Checkbox(skCrypt("Show FPS"), &cheat->settings.ShowFPS);
 				ImGui::Checkbox(skCrypt("Show Position"), &cheat->settings.ShowPos);
 				ImGui::Checkbox(skCrypt("Show Velocity"), &cheat->settings.ShowVelocity);
+				ImGui::Checkbox(skCrypt("Show View Angles"), &cheat->settings.ShowViewAngles);
 				ImGui::Checkbox(skCrypt("Bunny Hop"), &cheat->settings.Bhop);
 				if (ImGui::Checkbox(skCrypt("Third Person"), &cheat->settings.ThirdPerson))
 				{
 
 				}
-				ImGui::SliderInt("FOV:", &cheat->settings.FOV, 1, 160, "%d", ImGuiSliderFlags_AlwaysClamp);
+
+				ImGui::Checkbox(skCrypt("No Recoil"), &cheat->settings.NoRecoil);
+				ImGui::SliderInt(skCrypt("FOV:"), &cheat->settings.FOV, 1, 160, skCrypt("%d"), ImGuiSliderFlags_AlwaysClamp);
+				if (ImGui::Checkbox(skCrypt("Left Handed Knife"), &cheat->settings.LeftHandKnife))
+				{
+					cheat->interfaces.EngineClient->ClientCmd_Unrestricted(cheat->settings.LeftHandKnife ? skCrypt("cl_righthand 1") : skCrypt("cl_righthand 1"));
+				}
 				break;
 			}
 		}
 		ImGui::End();
 
-		ImGui::ShowDemoWindow();
+		//ImGui::ShowDemoWindow((bool*)true);
 	}
 	else
 	{
@@ -232,33 +256,36 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 
 	ImU32 greyBg = ImGui::ColorConvertFloat4ToU32(ImVec4(0.1f, 0.1f, 0.1f, bgOpacity));
 	cheat->dx9.drawlist->AddRectFilled(ImVec2(0, 0), ImVec2(cheat->WindowSize.x, cheat->WindowSize.y), greyBg);
-	cheat->dx9.drawlist->AddImage((void*)texture, ImVec2((cheat->WindowSize.x - ChisatoIMGWidth / 1.1f) + 100, cheat->WindowSize.y - ChisatoIMGHeight / 1.1f), ImVec2(cheat->WindowSize.x + 100, cheat->WindowSize.y), ImVec2(0, 0), ImVec2(1, 1), ImGui::ColorConvertFloat4ToU32(ImVec4(1.f, 1.f, 1.f, bgOpacity)));
+	//cheat->dx9.drawlist->AddImage((void*)texture, ImVec2((cheat->WindowSize.x - ChisatoIMGWidth / 1.1f) + 100, cheat->WindowSize.y - ChisatoIMGHeight / 1.1f), ImVec2(cheat->WindowSize.x + 100, cheat->WindowSize.y), ImVec2(0, 0), ImVec2(1, 1), ImGui::ColorConvertFloat4ToU32(ImVec4(1.f, 1.f, 1.f, bgOpacity)));
 
 	ImGui::SetNextWindowBgAlpha(0.3f);
 
-	bool UsingCounter = cheat->settings.ShowFPS || cheat->settings.ShowPos || cheat->settings.ShowVelocity;
+	bool UsingCounter = cheat->settings.ShowFPS || cheat->settings.ShowPos || cheat->settings.ShowVelocity || cheat->settings.ShowViewAngles;
 
 	ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 1.f, 1.f, 1.f));
 	ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(168, 50, 50, 255));
-	if (UsingCounter && ImGui::Begin(skCrypt("Counter"), nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDecoration))
+	if (UsingCounter && ImGui::Begin(skCrypt("#Counter"), nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDecoration))
 	{
 
 		static DWORD now = GetTickCount();
 		DWORD elapsed = GetTickCount() - now;
 		static Vec3 velocity = Vec3(0, 0, 0);
 		static Vec3 Pos = Vec3(0, 0, 0);
+		static Vec3 ViewAngles = Vec3(0, 0, 0);
 
-		if (elapsed >= 100)//Update every 100ms
+		if (elapsed >= 50)//Update every 50ms
 		{
-			if (LocalPlayer != nullptr)
+			if (cheat->LocalPlayer != nullptr)
 			{
-				velocity = *LocalPlayer->m_vecVelocity();
-				Pos = *LocalPlayer->m_vecOrigin();
+				velocity = *cheat->LocalPlayer->m_vecVelocity();
+				Pos = *cheat->LocalPlayer->m_vecOrigin();
+				ViewAngles = *cheat->GetViewAngles();
 			}
 			else
 			{
 				velocity = Vec3(0, 0, 0);
 				Pos = Vec3(0, 0, 0);
+				ViewAngles = Vec3(0, 0, 0);
 			}
 
 			now = GetTickCount();
@@ -270,7 +297,7 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 		if (cheat->settings.ShowMenu)
 		{
 			WindowHeight += 20;
-			ImGui::Text("Drag to move");
+			ImGui::Text(skCrypt("Drag to move"));
 		}
 
 
@@ -292,7 +319,7 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 			WindowHeight += 20;
 			std::stringstream ss;
 
-			ss << skCrypt("Pos: ") << round(Pos.x) << " " << round(Pos.y) << " " << round(Pos.z);
+			ss << skCrypt("Pos: ") << round(Pos.x) << skCrypt(" ") << round(Pos.y) << skCrypt(" ") << round(Pos.z);
 			ImGui::Text(ss.str().c_str());
 
 			ImVec2 textSize = ImGui::CalcTextSize(ss.str().c_str());
@@ -304,12 +331,26 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 			WindowHeight += 20;
 			std::stringstream ss;
 
-			ss << skCrypt("Velocity: ") << round(velocity.x) << " " << round(velocity.y) << " " << round(velocity.z);
+			ss << skCrypt("Velocity: ") << round(velocity.x) << skCrypt(" ") << round(velocity.y) << skCrypt(" ") << round(velocity.z);
 			ImGui::Text(ss.str().c_str());
 
 			ImVec2 textSize = ImGui::CalcTextSize(ss.str().c_str());
 			WindowWidth = max(WindowWidth, (int)textSize.x + 50);
 		}
+
+		if (cheat->settings.ShowViewAngles)
+		{
+			WindowHeight += 20;
+			std::stringstream ss;
+
+			ss << skCrypt("View Angles: ") << round(ViewAngles.x) << skCrypt(" ") << round(ViewAngles.y) << skCrypt(" ") << round(ViewAngles.z);
+			ImGui::Text(ss.str().c_str());
+
+			ImVec2 textSize = ImGui::CalcTextSize(ss.str().c_str());
+			WindowWidth = max(WindowWidth, (int)textSize.x + 50);
+		}
+
+
 
 		ImGui::SetWindowSize(ImVec2((float)WindowWidth, (float)WindowHeight), ImGuiCond_Always);
 
@@ -328,23 +369,25 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 		ImGui::PopFont();
 	}
 
+	if (cheat->settings.LeftHandKnife)
+		LeftHandKnife();
 
 
 
 
 	//mtx.try_lock() is so the drawing doesn't flicker if the user has multicore rendering on.
-	if (LocalPlayer != nullptr && mtx.try_lock())//When the player is ingame
+	if (cheat->LocalPlayer != nullptr && mtx.try_lock())//When the player is ingame
 	{
 		cheat->viewMatrix = (sdk::VMatrix*)cheat->interfaces.EngineClient->WorldToScreenMatrix();
-		if (cheat->settings.FOV != *LocalPlayer->m_iDefaultFOV())
-			*LocalPlayer->m_iDefaultFOV() = cheat->settings.FOV;
+		if (cheat->settings.FOV != *cheat->LocalPlayer->m_iDefaultFOV())
+			*cheat->LocalPlayer->m_iDefaultFOV() = cheat->settings.FOV;
 
 		if (cheat->settings.Bhop)
 		{
 #define	FL_ONGROUND				(1<<0)	// At rest / on the ground
 			uintptr_t* ForceJump = (uintptr_t*)(uintptr_t(cheat->modules.client) + 0x52878FC /*dwForceJump*/);
 
-			if (GetAsyncKeyState(VK_SPACE) && (*LocalPlayer->m_fFlags() & FL_ONGROUND))
+			if (GetAsyncKeyState(VK_SPACE) && (*cheat->LocalPlayer->m_fFlags() & FL_ONGROUND))
 			{
 				*ForceJump = 6;
 			}
@@ -352,6 +395,11 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 			{
 				*ForceJump = 4;
 			}
+		}
+
+		if (cheat->settings.NoRecoil)
+		{
+			NoRecoil();
 		}
 
 		for (int i = 0; i < cheat->interfaces.ClientEntityList->GetMaxEntities(); i++)
@@ -365,9 +413,25 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 			if (ClassID == EntID::CCSPlayer && entity->IsValid())
 			{
 				Vec2 feetpos;
-				if (cheat->WorldToScreen(*entity->m_vecOrigin(), feetpos))
+				Vec2 headpos;
+				Vec3 HeadPos3D = entity->GetBonePosition(8);
+				if (cheat->WorldToScreen(*entity->m_vecOrigin(), feetpos) && cheat->WorldToScreen(HeadPos3D, headpos))
 				{
-					cheat->dx9.drawlist->AddLine(ImVec2(cheat->WindowSize.x / 2, cheat->WindowSize.y), ImVec2(feetpos.x, feetpos.y), IM_COL32(168, 50, 50, 255));
+					switch (cheat->settings.Snaplines)
+					{
+					case 1://Top
+						cheat->dx9.drawlist->AddLine(ImVec2(cheat->WindowSize.x / 2, 0), ImVec2(headpos.x, headpos.y), IM_COL32(168, 50, 50, 255));
+						break;
+
+					case 2://Crosshair
+						cheat->dx9.drawlist->AddLine(ImVec2(cheat->WindowSize.x / 2, cheat->WindowSize.y / 2), ImVec2(headpos.x, headpos.y), IM_COL32(168, 50, 50, 255));
+						break;
+
+					case 3://Bottom
+						cheat->dx9.drawlist->AddLine(ImVec2(cheat->WindowSize.x / 2, cheat->WindowSize.y), ImVec2(feetpos.x, feetpos.y), IM_COL32(168, 50, 50, 255));
+						break;
+					}
+
 				}
 			}
 		}

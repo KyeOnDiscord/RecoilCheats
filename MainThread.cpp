@@ -36,6 +36,7 @@ DWORD WINAPI MainThread(HMODULE hModule)
 		Sleep(1000 / 120);
 	}
 	cheat->settings.ShowMenu = false;
+	Sleep(300);
 	//Ejecting the cheat
 	cheat->hooks.endscene.DisableHook(); //Disable the end scene hook
 	cheat->interfaces.InputSystem->EnableInput(true); //Enable the input again so the user can click on buttons
@@ -53,7 +54,5 @@ DWORD WINAPI MainThread(HMODULE hModule)
 		fclose(f);
 	FreeConsole();
 #endif // UseConsole
-	Sleep(1000);
-
 	FreeLibraryAndExitThread(hModule, 0);
 }
