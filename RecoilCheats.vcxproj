@@ -68,6 +68,7 @@
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <AdditionalIncludeDirectories>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</AdditionalIncludeDirectories>
       <PreprocessToFile>false</PreprocessToFile>
+      <Optimization>Disabled</Optimization>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -87,7 +88,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <Optimization>MinSpace</Optimization>
+      <Optimization>Disabled</Optimization>
       <PreprocessToFile>false</PreprocessToFile>
     </ClCompile>
     <Link>

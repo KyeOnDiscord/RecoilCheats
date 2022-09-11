@@ -33,7 +33,7 @@ DWORD WINAPI MainThread(HMODULE hModule)
 	{
 		cheat->Update();
 
-		Sleep(1000 / 120);
+		Sleep(1000 / 30);//30 fps
 	}
 	cheat->settings.ShowMenu = false;
 	Sleep(300);

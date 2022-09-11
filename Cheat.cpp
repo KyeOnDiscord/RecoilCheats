@@ -4,6 +4,8 @@
 #include <D3dx9tex.h>
 #include <chrono>
 #pragma comment(lib, "D3dx9")
+#include "Entity.h"
+
 extern Cheat* cheat;
 
 
@@ -16,6 +18,8 @@ void Cheat::Init()
 	this->InitEndSceneHook();
 }
 
+void LeftHandKnife();
+void NoRecoil();
 
 void Cheat::Update()
 {
@@ -30,6 +34,36 @@ void Cheat::Update()
 
 		this->interfaces.EngineClient->ClientCmd_Unrestricted(this->settings.ShowMenu ? skCrypt("showconsole") : skCrypt("hideconsole"));
 	}
+
+	if (cheat->LocalPlayer != nullptr && *cheat->LocalPlayer->m_iHealth() > 0)
+	{
+		cheat->viewMatrix = (sdk::VMatrix*)cheat->interfaces.EngineClient->WorldToScreenMatrix();
+		if (cheat->settings.LeftHandKnife)
+			LeftHandKnife();
+
+		if (cheat->settings.NoRecoil)
+			NoRecoil();
+
+
+		if (cheat->settings.FOV != *cheat->LocalPlayer->m_iDefaultFOV())
+			*cheat->LocalPlayer->m_iDefaultFOV() = cheat->settings.FOV;
+
+		if (cheat->settings.Bhop)
+		{
+#define	FL_ONGROUND				(1<<0)	// At rest / on the ground
+			uintptr_t* ForceJump = (uintptr_t*)(uintptr_t(cheat->modules.client) + 0x52878FC /*dwForceJump*/);
+
+			if (GetAsyncKeyState(VK_SPACE) && (*cheat->LocalPlayer->m_fFlags() & FL_ONGROUND))
+			{
+				*ForceJump = 6;
+			}
+			else
+			{
+				*ForceJump = 4;
+			}
+		}
+	}
+
 
 	this->dx9.UpdateOverlayPosition();
 }
@@ -228,7 +262,15 @@ bool WorldToScreenCalculation(Vec3 in, Vec2& screen, sdk::VMatrix matrix, int wi
 
 bool Cheat::WorldToScreen(const Vec3& in, Vec2& out)
 {
-	return WorldToScreenCalculation(in, out, *cheat->viewMatrix, (int)cheat->WindowSize.x, (int)cheat->WindowSize.y);
+	if (cheat->viewMatrix != nullptr)
+	{
+		return WorldToScreenCalculation(in, out, *cheat->viewMatrix, (int)cheat->WindowSize.x, (int)cheat->WindowSize.y);
+	}
+	else
+	{
+		return false;
+	}
+
 }
 
 

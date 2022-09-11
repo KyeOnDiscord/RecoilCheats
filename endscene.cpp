@@ -120,8 +120,7 @@ void InitImGui(IDirect3DDevice9* pDevice) {
 
 int FrameRate();
 bool LoadTextureFromFile(IDirect3DDevice9* pDevice, LPCWSTR filename, IDirect3DTexture9* out_texture, int* out_width, int* out_height);
-void LeftHandKnife();
-void NoRecoil();
+
 
 std::mutex mtx;           // mutex for critical section
 HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
@@ -369,8 +368,7 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 		ImGui::PopFont();
 	}
 
-	if (cheat->settings.LeftHandKnife)
-		LeftHandKnife();
+
 
 
 
@@ -378,29 +376,6 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 	//mtx.try_lock() is so the drawing doesn't flicker if the user has multicore rendering on.
 	if (cheat->LocalPlayer != nullptr && mtx.try_lock())//When the player is ingame
 	{
-		cheat->viewMatrix = (sdk::VMatrix*)cheat->interfaces.EngineClient->WorldToScreenMatrix();
-		if (cheat->settings.FOV != *cheat->LocalPlayer->m_iDefaultFOV())
-			*cheat->LocalPlayer->m_iDefaultFOV() = cheat->settings.FOV;
-
-		if (cheat->settings.Bhop)
-		{
-#define	FL_ONGROUND				(1<<0)	// At rest / on the ground
-			uintptr_t* ForceJump = (uintptr_t*)(uintptr_t(cheat->modules.client) + 0x52878FC /*dwForceJump*/);
-
-			if (GetAsyncKeyState(VK_SPACE) && (*cheat->LocalPlayer->m_fFlags() & FL_ONGROUND))
-			{
-				*ForceJump = 6;
-			}
-			else
-			{
-				*ForceJump = 4;
-			}
-		}
-
-		if (cheat->settings.NoRecoil)
-		{
-			NoRecoil();
-		}
 
 		for (int i = 0; i < cheat->interfaces.ClientEntityList->GetMaxEntities(); i++)
 		{
