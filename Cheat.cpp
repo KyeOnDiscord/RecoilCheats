@@ -34,8 +34,13 @@ void Cheat::Update()
 
 		this->interfaces.EngineClient->ClientCmd_Unrestricted(this->settings.ShowMenu ? skCrypt("showconsole") : skCrypt("hideconsole"));
 	}
+	int dwClientState = 0x58CFDC;
+	uintptr_t clientState = *(uintptr_t*)((uintptr_t)this->modules.engine + dwClientState);
+	int gameState = *(uintptr_t*)(clientState + 0x108); /*dwClientState_State*/
 
-	if (cheat->LocalPlayer != nullptr && *cheat->LocalPlayer->m_iHealth() > 0)
+
+	/*std::cout << gameState << std::endl;*/
+	if (gameState == 6 && cheat->LocalPlayer != nullptr && *cheat->LocalPlayer->m_iHealth() > 0)
 	{
 		cheat->viewMatrix = (sdk::VMatrix*)cheat->interfaces.EngineClient->WorldToScreenMatrix();
 		if (cheat->settings.LeftHandKnife)

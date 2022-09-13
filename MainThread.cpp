@@ -2,7 +2,7 @@
 #include "MainThread.h"
 
 #if _DEBUG
-//#define UseConsole true
+#define UseConsole true
 #endif
 
 //Everything will be inside the cheat class pointer so we only have 1 instance of it
