@@ -113,7 +113,9 @@ void Cheat::InitInterfaces()
 
 void Cheat::InitOffsets()
 {
-	//this->offsets.dwClientState_ViewAngles = (uintptr_t)this->PatternScan(this->modules.client, skCrypt("8B 35 ? ? ? ? FF 10 0F B7 C0")) + 2;
+	//Engine.dll offsets
+	this->offsets.dwClientState = (uintptr_t)this->GetSignature(this->modules.engine, skCrypt("A1 ? ? ? ? 33 D2 6A 00 6A 00 33 C9 89 B0"),true, { 1 },0);
+	this->offsets.dwClientState_ViewAngles = (uintptr_t)this->GetSignature(this->modules.engine, skCrypt("F3 0F 11 86 ? ? ? ? F3 0F 10 44 24 ? F3 0F 11 86"), false, {4},0);
 }
 
 
@@ -279,55 +281,11 @@ bool Cheat::WorldToScreen(const Vec3& in, Vec2& out)
 }
 
 
-std::uint8_t* Cheat::PatternScan(void* module, const char* signature)
-{
-	static auto pattern_to_byte = [](const char* pattern) {
-		auto bytes = std::vector<int>{};
-		auto start = const_cast<char*>(pattern);
-		auto end = const_cast<char*>(pattern) + strlen(pattern);
 
-		for (auto current = start; current < end; ++current) {
-			if (*current == '?') {
-				++current;
-				if (*current == '?')
-					++current;
-				bytes.push_back(-1);
-			}
-			else {
-				bytes.push_back(strtoul(current, &current, 16));
-			}
-		}
-		return bytes;
-	};
-
-	auto dosHeader = (PIMAGE_DOS_HEADER)module;
-	auto ntHeaders = (PIMAGE_NT_HEADERS)((std::uint8_t*)module + dosHeader->e_lfanew);
-
-	auto sizeOfImage = ntHeaders->OptionalHeader.SizeOfImage;
-	auto patternBytes = pattern_to_byte(signature);
-	auto scanBytes = reinterpret_cast<std::uint8_t*>(module);
-
-	auto s = patternBytes.size();
-	auto d = patternBytes.data();
-
-	for (auto i = 0ul; i < sizeOfImage - s; ++i) {
-		bool found = true;
-		for (auto j = 0ul; j < s; ++j) {
-			if (scanBytes[i + j] != d[j] && d[j] != -1) {
-				found = false;
-				break;
-			}
-		}
-		if (found) {
-			return &scanBytes[i];
-		}
-	}
-	return nullptr;
-}
 
 Vec3* Cheat::GetViewAngles()
 {
-	uintptr_t dwClientState = *(uintptr_t*)((uintptr_t)this->modules.engine + 0x58CFDC);
+	uintptr_t dwClientState = *(uintptr_t*)((uintptr_t)this->modules.engine + this->offsets.dwClientState);
 
-	return (Vec3*)(dwClientState + 0x4D90/*dwClientState_viewAngles*/);
+	return (Vec3*)(dwClientState + this->offsets.dwClientState_ViewAngles);
 }

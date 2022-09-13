@@ -10,6 +10,7 @@
 #include <chrono>
 #include <thread>
 #include <mutex>
+#include <vector>
 //Directx9
 #include <d3d9.h>
 #include <d3dx9.h>
