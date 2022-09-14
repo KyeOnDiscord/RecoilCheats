@@ -18,7 +18,7 @@ private:
 	//DirectX
 	void InitDirectX9();
 	IDirect3DDevice9Vtbl* dx9Vtable;
-	void InitEndSceneHook();
+	void InitHooks();
 	void InitInterfaces();
 	void InitOffsets();
 	std::uint8_t* PatternScan(void* module, const char* signature);
@@ -50,6 +50,7 @@ public:
 	struct hooooks
 	{
 		Hook::Hook endscene;
+		Hook::Hook reset;
 	} hooks;
 
 	struct directx9
@@ -59,6 +60,7 @@ public:
 		void UpdateOverlayPosition();
 
 		tEndScene oEndScene = nullptr;
+		tReset oReset = nullptr;
 
 		WNDPROC oriWndProc = NULL;
 		ImDrawList* drawlist;
@@ -94,6 +96,8 @@ public:
 	struct offsets
 	{
 		uintptr_t dwClientState = 0;
+		uintptr_t dwClientState_State = 0;
 		uintptr_t dwClientState_ViewAngles = 0;
+		uintptr_t m_bDormant = 0;
 	}offsets;
 };

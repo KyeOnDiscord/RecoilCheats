@@ -15,6 +15,7 @@
 #include "dx9.h"
 #include "hook.h"
 #include "endscene.h"
+#include "Reset.h"
 
 #include "sdk/sdk.h"
 #include "sdk/netvars.h"

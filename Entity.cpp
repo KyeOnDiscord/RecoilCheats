@@ -21,9 +21,15 @@ bool CCSPlayer::IsMoving()
 	return true;
 }
 
+
+bool CCSPlayer::IsDormant()
+{
+	return *(bool*)(this + cheat->offsets.m_bDormant);
+}
+
 bool CCSPlayer::IsValid()
 {
-	if (this == nullptr || this == cheat->LocalPlayer ||/* ent->isDormant ||*/ *this->m_iHealth() <= 0)
+	if (this == nullptr || this == cheat->LocalPlayer || this->IsDormant() || *this->m_iHealth() <= 0)
 		return false;
 
 	return true;

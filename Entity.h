@@ -79,6 +79,7 @@ public:
 	bool IsMoving();
 	bool IsValid();
 	Vec3 GetBonePosition(int BoneID);
+	bool IsDormant();
 	GetNetVar(m_iHealth, skCrypt("DT_BasePlayer"), skCrypt("m_iHealth"), int, 0);
 	GetNetVar(m_vecOrigin, skCrypt("DT_BasePlayer"), skCrypt("m_vecOrigin"), Vec3, 0);
 	GetNetVar(m_vecVelocity, skCrypt("DT_CSPlayer"), skCrypt("m_vecVelocity[0]"), Vec3, 0);

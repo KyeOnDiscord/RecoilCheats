@@ -3,7 +3,8 @@
 #include "sdk/netvars.h"
 #include "Entity.h"
 #include "Util.h"
-#include "blueteafont.h"
+#include "resources/blueteafont.h"
+#include "resources/chisato.h"
 extern Cheat* cheat;
 
 #define round(x) Util::RoundToTwoDecimals(x)
@@ -119,8 +120,8 @@ void InitImGui(IDirect3DDevice9* pDevice) {
 
 
 int FrameRate();
-bool LoadTextureFromFile(IDirect3DDevice9* pDevice, LPCWSTR filename, IDirect3DTexture9* out_texture, int* out_width, int* out_height);
-
+bool LoadTextureFromFile(LPDIRECT3DDEVICE9 pDevice, const char* filename, PDIRECT3DTEXTURE9* out_texture, int* out_width, int* out_height);
+bool LoadTextureFromMemory(IDirect3DDevice9* pDevice, LPVOID pSrcData, IDirect3DTexture9* out_texture, int* out_width, int* out_height);
 
 std::mutex mtx;           // mutex for critical section
 HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
@@ -130,17 +131,19 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 
 	static bool Initialized = false;
 	static int ChisatoIMGWidth, ChisatoIMGHeight;
-	static IDirect3DTexture9* texture = nullptr;
+	static IDirect3DTexture9* texture;
+
+	if (texture == nullptr)
+	{
+		LoadTextureFromFile(pDevice, skCrypt("chisatoEDcrop.png"), &texture, &ChisatoIMGWidth, &ChisatoIMGHeight);
+	}
+	
 	if (!Initialized)
 	{
 		InitImGui(pDevice);
 
 
-		if (texture == nullptr)
-		{
-			LoadTextureFromFile(pDevice, skCrypt(L"chisatoEDcrop.png"), texture, &ChisatoIMGWidth, &ChisatoIMGHeight);
-			//HRESULT result = D3DXCreateTextureFromFile(pDevice, skCrypt(L"chisatoEDcrop.png"), &texture);
-		}
+		
 
 		Initialized = true;
 	}
@@ -255,7 +258,7 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 
 	ImU32 greyBg = ImGui::ColorConvertFloat4ToU32(ImVec4(0.1f, 0.1f, 0.1f, bgOpacity));
 	cheat->dx9.drawlist->AddRectFilled(ImVec2(0, 0), ImVec2(cheat->WindowSize.x, cheat->WindowSize.y), greyBg);
-	//cheat->dx9.drawlist->AddImage((void*)texture, ImVec2((cheat->WindowSize.x - ChisatoIMGWidth / 1.1f) + 100, cheat->WindowSize.y - ChisatoIMGHeight / 1.1f), ImVec2(cheat->WindowSize.x + 100, cheat->WindowSize.y), ImVec2(0, 0), ImVec2(1, 1), ImGui::ColorConvertFloat4ToU32(ImVec4(1.f, 1.f, 1.f, bgOpacity)));
+	cheat->dx9.drawlist->AddImage((void*)texture, ImVec2((cheat->WindowSize.x - ChisatoIMGWidth / 1.1f) + 100, cheat->WindowSize.y - ChisatoIMGHeight / 1.1f), ImVec2(cheat->WindowSize.x + 100, cheat->WindowSize.y), ImVec2(0, 0), ImVec2(1, 1), ImGui::ColorConvertFloat4ToU32(ImVec4(1.f, 1.f, 1.f, bgOpacity)));
 
 	ImGui::SetNextWindowBgAlpha(0.3f);
 

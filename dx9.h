@@ -2,6 +2,7 @@
 #include "pch.h"
 
 typedef HRESULT(APIENTRY* tEndScene)(IDirect3DDevice9* pDevice);
+typedef HRESULT(APIENTRY* tReset)(IDirect3DDevice9* pDevice, D3DPRESENT_PARAMETERS* pPresentationParameters);
 
 typedef struct IDirect3DDevice9Vtbl
 {

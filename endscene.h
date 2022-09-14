@@ -1,1 +1,2 @@
+#pragma once
 HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice);

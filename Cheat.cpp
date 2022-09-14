@@ -15,7 +15,7 @@ void Cheat::Init()
 	this->InitInterfaces();
 	this->InitOffsets();
 	this->InitDirectX9();
-	this->InitEndSceneHook();
+	this->InitHooks();
 }
 
 void LeftHandKnife();
@@ -34,12 +34,10 @@ void Cheat::Update()
 
 		this->interfaces.EngineClient->ClientCmd_Unrestricted(this->settings.ShowMenu ? skCrypt("showconsole") : skCrypt("hideconsole"));
 	}
-	int dwClientState = 0x58CFDC;
-	uintptr_t clientState = *(uintptr_t*)((uintptr_t)this->modules.engine + dwClientState);
-	int gameState = *(uintptr_t*)(clientState + 0x108); /*dwClientState_State*/
+	uintptr_t clientState = *(uintptr_t*)((uintptr_t)this->modules.engine + this->offsets.dwClientState);
+	int gameState = *(uintptr_t*)(clientState + this->offsets.dwClientState_State);
 
-
-	/*std::cout << gameState << std::endl;*/
+	
 	if (gameState == 6 && cheat->LocalPlayer != nullptr && *cheat->LocalPlayer->m_iHealth() > 0)
 	{
 		cheat->viewMatrix = (sdk::VMatrix*)cheat->interfaces.EngineClient->WorldToScreenMatrix();
@@ -88,9 +86,10 @@ void Cheat::InitDirectX9()
 	this->dx9Vtable = (IDirect3DDevice9Vtbl*)d3d9Device;
 }
 
-void Cheat::InitEndSceneHook()
+void Cheat::InitHooks()
 {
 	this->hooks.endscene = Hook::Hook((PBYTE)this->dx9Vtable->EndScene, (PBYTE)hkEndScene, (PBYTE)&this->dx9.oEndScene, 7);
+	this->hooks.reset = Hook::Hook((PBYTE)this->dx9Vtable->Reset, (PBYTE)hkReset, (PBYTE)&this->dx9.oReset, 7);
 }
 
 void Cheat::InitInterfaces()
@@ -115,7 +114,12 @@ void Cheat::InitOffsets()
 {
 	//Engine.dll offsets
 	this->offsets.dwClientState = (uintptr_t)this->GetSignature(this->modules.engine, skCrypt("A1 ? ? ? ? 33 D2 6A 00 6A 00 33 C9 89 B0"),true, { 1 },0);
+	this->offsets.dwClientState_State = (uintptr_t)this->GetSignature(this->modules.engine, skCrypt("83 B8 ? ? ? ? ? 0F 94 C0 C3"),false, { 2 },0);
 	this->offsets.dwClientState_ViewAngles = (uintptr_t)this->GetSignature(this->modules.engine, skCrypt("F3 0F 11 86 ? ? ? ? F3 0F 10 44 24 ? F3 0F 11 86"), false, {4},0);
+
+	//Client.dll offsets
+
+	this->offsets.m_bDormant = (uintptr_t)this->GetSignature(this->modules.client, skCrypt("8A 81 ? ? ? ? C3 32 C0"), false, { 2 }, 8);
 }
 
 
@@ -189,25 +193,26 @@ bool Cheat::directx9::GetD3D9Device(void** pTable, size_t size)
 
 
 // Simple helper function to load an image into a DX9 texture with common settings
-bool LoadTextureFromFile(IDirect3DDevice9* pDevice, LPCWSTR filename, IDirect3DTexture9* out_texture, int* out_width, int* out_height)
+bool LoadTextureFromFile(LPDIRECT3DDEVICE9 pDevice,const char* filename, PDIRECT3DTEXTURE9* out_texture, int* out_width, int* out_height)
 {
-	// Load texture from disk
+    // Load texture from disk
+    PDIRECT3DTEXTURE9 texture;
+    HRESULT hr = D3DXCreateTextureFromFileA(pDevice, filename, &texture);
+    if (hr != S_OK)
+        return false;
 
-	HRESULT hr = D3DXCreateTextureFromFile(pDevice, filename, &out_texture);
-	if (hr != S_OK)
-		return false;
-
-	// Retrieve description of the texture surface so we can access its size
-	D3DSURFACE_DESC my_image_desc;
-	out_texture->GetLevelDesc(0, &my_image_desc);
-	*out_width = (int)my_image_desc.Width;
-	*out_height = (int)my_image_desc.Height;
-	return true;
+    // Retrieve description of the texture surface so we can access its size
+    D3DSURFACE_DESC my_image_desc;
+    texture->GetLevelDesc(0, &my_image_desc);
+    *out_texture = texture;
+    *out_width = (int)my_image_desc.Width;
+    *out_height = (int)my_image_desc.Height;
+    return true;
 }
 
 bool LoadTextureFromMemory(IDirect3DDevice9* pDevice, LPVOID pSrcData, IDirect3DTexture9* out_texture, int* out_width, int* out_height)
 {
-	// Load texture from disk
+	// Load texture from memory
 
 	HRESULT hr = D3DXCreateTextureFromFileInMemory(pDevice, pSrcData, sizeof(pSrcData), &out_texture);
 	if (hr != S_OK)

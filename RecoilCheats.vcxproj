@@ -117,7 +117,9 @@
     <ClInclude Include="imgui\imstb_truetype.h" />
     <ClInclude Include="MainThread.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="blueteafont.h" />
+    <ClInclude Include="Reset.h" />
+    <ClInclude Include="resources\blueteafont.h" />
+    <ClInclude Include="resources\chisato.h" />
     <ClInclude Include="sdk\netvars.h" />
     <ClInclude Include="sdk\sdk.h" />
     <ClInclude Include="skCrypter.h" />
@@ -174,6 +176,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="Reset.cpp" />
     <ClCompile Include="sdk\netvars.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>

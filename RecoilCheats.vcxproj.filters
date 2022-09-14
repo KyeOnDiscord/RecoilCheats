@@ -81,10 +81,16 @@
     <ClInclude Include="Util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="blueteafont.h">
+    <ClInclude Include="resources\blueteafont.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="features\LeftKnife.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resources\chisato.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Reset.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -147,6 +153,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="sdk\PatternScan.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Reset.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
