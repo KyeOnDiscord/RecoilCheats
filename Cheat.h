@@ -29,7 +29,7 @@ public:
 
 	//Updates the hack, called multiples times per frame
 	void Update();
-	
+
 	std::uint8_t* GetSignature(HMODULE module, const char* signature, bool relative, std::vector<int> offsets, int extra);
 	bool WorldToScreen(const Vec3& position, Vec2& screenPosition);
 	Vec3* GetViewAngles();
@@ -99,5 +99,6 @@ public:
 		uintptr_t dwClientState_State = 0;
 		uintptr_t dwClientState_ViewAngles = 0;
 		uintptr_t m_bDormant = 0;
+		uintptr_t dwForceJump = 0;
 	}offsets;
 };

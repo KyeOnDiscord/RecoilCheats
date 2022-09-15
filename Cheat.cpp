@@ -37,7 +37,7 @@ void Cheat::Update()
 	uintptr_t clientState = *(uintptr_t*)((uintptr_t)this->modules.engine + this->offsets.dwClientState);
 	int gameState = *(uintptr_t*)(clientState + this->offsets.dwClientState_State);
 
-	
+
 	if (gameState == 6 && cheat->LocalPlayer != nullptr && *cheat->LocalPlayer->m_iHealth() > 0)
 	{
 		cheat->viewMatrix = (sdk::VMatrix*)cheat->interfaces.EngineClient->WorldToScreenMatrix();
@@ -54,7 +54,7 @@ void Cheat::Update()
 		if (cheat->settings.Bhop)
 		{
 #define	FL_ONGROUND				(1<<0)	// At rest / on the ground
-			uintptr_t* ForceJump = (uintptr_t*)(uintptr_t(cheat->modules.client) + 0x52878FC /*dwForceJump*/);
+			uintptr_t* ForceJump = (uintptr_t*)(uintptr_t(cheat->modules.client) + cheat->offsets.dwForceJump);
 
 			if (GetAsyncKeyState(VK_SPACE) && (*cheat->LocalPlayer->m_fFlags() & FL_ONGROUND))
 			{
@@ -113,13 +113,14 @@ void Cheat::InitInterfaces()
 void Cheat::InitOffsets()
 {
 	//Engine.dll offsets
-	this->offsets.dwClientState = (uintptr_t)this->GetSignature(this->modules.engine, skCrypt("A1 ? ? ? ? 33 D2 6A 00 6A 00 33 C9 89 B0"),true, { 1 },0);
-	this->offsets.dwClientState_State = (uintptr_t)this->GetSignature(this->modules.engine, skCrypt("83 B8 ? ? ? ? ? 0F 94 C0 C3"),false, { 2 },0);
-	this->offsets.dwClientState_ViewAngles = (uintptr_t)this->GetSignature(this->modules.engine, skCrypt("F3 0F 11 86 ? ? ? ? F3 0F 10 44 24 ? F3 0F 11 86"), false, {4},0);
+	this->offsets.dwClientState = (uintptr_t)this->GetSignature(this->modules.engine, skCrypt("A1 ? ? ? ? 33 D2 6A 00 6A 00 33 C9 89 B0"), true, { 1 }, 0);
+	this->offsets.dwClientState_State = (uintptr_t)this->GetSignature(this->modules.engine, skCrypt("83 B8 ? ? ? ? ? 0F 94 C0 C3"), false, { 2 }, 0);
+	this->offsets.dwClientState_ViewAngles = (uintptr_t)this->GetSignature(this->modules.engine, skCrypt("F3 0F 11 86 ? ? ? ? F3 0F 10 44 24 ? F3 0F 11 86"), false, { 4 }, 0);
 
 	//Client.dll offsets
 
 	this->offsets.m_bDormant = (uintptr_t)this->GetSignature(this->modules.client, skCrypt("8A 81 ? ? ? ? C3 32 C0"), false, { 2 }, 8);
+	this->offsets.dwForceJump = (uintptr_t)this->GetSignature(this->modules.client, skCrypt("8B 0D ? ? ? ? 8B D6 8B C1 83 CA 02"), true, { 2 }, 0);
 }
 
 
@@ -193,21 +194,21 @@ bool Cheat::directx9::GetD3D9Device(void** pTable, size_t size)
 
 
 // Simple helper function to load an image into a DX9 texture with common settings
-bool LoadTextureFromFile(LPDIRECT3DDEVICE9 pDevice,const char* filename, PDIRECT3DTEXTURE9* out_texture, int* out_width, int* out_height)
+bool LoadTextureFromFile(LPDIRECT3DDEVICE9 pDevice, const char* filename, PDIRECT3DTEXTURE9* out_texture, int* out_width, int* out_height)
 {
-    // Load texture from disk
-    PDIRECT3DTEXTURE9 texture;
-    HRESULT hr = D3DXCreateTextureFromFileA(pDevice, filename, &texture);
-    if (hr != S_OK)
-        return false;
+	// Load texture from disk
+	PDIRECT3DTEXTURE9 texture;
+	HRESULT hr = D3DXCreateTextureFromFileA(pDevice, filename, &texture);
+	if (hr != S_OK)
+		return false;
 
-    // Retrieve description of the texture surface so we can access its size
-    D3DSURFACE_DESC my_image_desc;
-    texture->GetLevelDesc(0, &my_image_desc);
-    *out_texture = texture;
-    *out_width = (int)my_image_desc.Width;
-    *out_height = (int)my_image_desc.Height;
-    return true;
+	// Retrieve description of the texture surface so we can access its size
+	D3DSURFACE_DESC my_image_desc;
+	texture->GetLevelDesc(0, &my_image_desc);
+	*out_texture = texture;
+	*out_width = (int)my_image_desc.Width;
+	*out_height = (int)my_image_desc.Height;
+	return true;
 }
 
 bool LoadTextureFromMemory(IDirect3DDevice9* pDevice, LPVOID pSrcData, IDirect3DTexture9* out_texture, int* out_width, int* out_height)
