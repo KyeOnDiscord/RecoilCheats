@@ -90,8 +90,11 @@
     <ClInclude Include="resources\chisato.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Reset.h">
+    <ClInclude Include="presentHook.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Reset.h">
+      <Filter>hooks</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -155,8 +158,11 @@
     <ClCompile Include="sdk\PatternScan.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Reset.cpp">
+    <ClCompile Include="presentHook.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Reset.cpp">
+      <Filter>hooks</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

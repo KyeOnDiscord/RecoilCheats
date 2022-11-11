@@ -61,8 +61,8 @@ std::uint8_t* Cheat::GetSignature(HMODULE module, const char* signature, bool re
 
 	if (relative)
 	{
-		address = address - (uintptr_t)(module);
+		address -= (uintptr_t)(module);
 	}
-	
+
 	return address + extra;
 }

@@ -2,7 +2,10 @@
 #include "MainThread.h"
 
 #if _DEBUG
-//#define UseConsole true
+#define UseConsole true
+#define Print(x) std::cout << skCrypt(x) << std::endl
+#else
+#define Print(x)
 #endif
 
 //Everything will be inside the cheat class pointer so we only have 1 instance of it
@@ -22,9 +25,12 @@ DWORD WINAPI MainThread(HMODULE hModule)
 	cheat->Init();
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
-
+	Print("ImGui context created");
 	cheat->hooks.endscene.EnableHook();
-	cheat->hooks.reset.EnableHook();
+	Print("Endscene hook enabled");
+	//cheat->hooks.reset.EnableHook();
+	Print("Reset hook enabled");
+	//cheat->hooks.present.EnableHook();
 	//Disable input on first launch because the menu is open
 	cheat->interfaces.InputSystem->EnableInput(!cheat->settings.ShowMenu);
 	cheat->interfaces.EngineClient->ClientCmd_Unrestricted(skCrypt("showconsole"));
@@ -36,13 +42,15 @@ DWORD WINAPI MainThread(HMODULE hModule)
 		Sleep(1000 / 120);//120 fps
 	}
 	cheat->settings.ShowMenu = false;
-	Sleep(300);
+	Sleep(1000);
 	//Ejecting the cheat
 	cheat->hooks.endscene.DisableHook(); //Disable the end scene hook
-	cheat->hooks.reset.DisableHook(); //Disable the reset hook
+	//cheat->hooks.present.DisableHook(); //Disable the present hook
+	//cheat->hooks.reset.DisableHook(); //Disable the reset hook
 	cheat->interfaces.InputSystem->EnableInput(true); //Enable the input again so the user can click on buttons
 	cheat->interfaces.InputSystem->resetInputState();
 	SetWindowLongPtr(cheat->window, GWLP_WNDPROC, (LONG_PTR)cheat->dx9.oriWndProc);
+	Sleep(1000);
 	ImGui_ImplDX9_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();

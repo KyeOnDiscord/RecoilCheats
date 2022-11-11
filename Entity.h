@@ -1,6 +1,5 @@
 #pragma once
 #include "pch.h"
-
 extern Cheat* cheat;
 
 #define GetNetVar(funcname, Class, NetVarName, type, EndOffset) \
@@ -13,7 +12,27 @@ return reinterpret_cast<type*>(address); \
 }
 
 
-
+struct studiohdr_t
+{
+	int id;
+	int version;
+	int checksum;
+	char name[64];
+	int length;
+	Vec3 eyeposition;
+	Vec3 illumposition;
+	Vec3 hull_min;
+	Vec3 hull_max;
+	Vec3 view_bbmin;
+	Vec3 view_bbmax;
+	int flags;
+	int numbones;                // bones
+	int boneindex;
+	int numbonecontrollers;      // bone controllers
+	int bonecontrollerindex;
+	int numhitboxsets;
+	int hitboxsetindex;
+};
 
 
 class CCSWeaponInfo { //xSeeker
@@ -79,6 +98,8 @@ public:
 	bool IsMoving();
 	bool IsValid();
 	Vec3 GetBonePosition(int BoneID);
+	float* GetBoneBounds();
+	studiohdr_t GetBoneInfo();
 	bool IsDormant();
 	GetNetVar(m_iHealth, skCrypt("DT_BasePlayer"), skCrypt("m_iHealth"), int, 0);
 	GetNetVar(m_vecOrigin, skCrypt("DT_BasePlayer"), skCrypt("m_vecOrigin"), Vec3, 0);

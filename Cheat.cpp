@@ -23,52 +23,64 @@ void NoRecoil();
 
 void Cheat::Update()
 {
-	if (GetAsyncKeyState(VK_F1) & 1)
+	try
 	{
-		this->settings.ShowMenu = !settings.ShowMenu;
 
 
-		this->interfaces.InputSystem->resetInputState();
-		//Disables clicking on menu, etc when menu is shown
-		this->interfaces.InputSystem->EnableInput(!this->settings.ShowMenu);
-
-		this->interfaces.EngineClient->ClientCmd_Unrestricted(this->settings.ShowMenu ? skCrypt("showconsole") : skCrypt("hideconsole"));
-	}
-	uintptr_t clientState = *(uintptr_t*)((uintptr_t)this->modules.engine + this->offsets.dwClientState);
-	int gameState = *(uintptr_t*)(clientState + this->offsets.dwClientState_State);
-
-
-	if (gameState == 6 && cheat->LocalPlayer != nullptr && *cheat->LocalPlayer->m_iHealth() > 0)
-	{
-		cheat->viewMatrix = (sdk::VMatrix*)cheat->interfaces.EngineClient->WorldToScreenMatrix();
-		if (cheat->settings.LeftHandKnife)
-			LeftHandKnife();
-
-		if (cheat->settings.NoRecoil)
-			NoRecoil();
-
-
-		if (cheat->settings.FOV != *cheat->LocalPlayer->m_iDefaultFOV())
-			*cheat->LocalPlayer->m_iDefaultFOV() = cheat->settings.FOV;
-
-		if (cheat->settings.Bhop)
+		if (GetAsyncKeyState(VK_F1) & 1)
 		{
-#define	FL_ONGROUND				(1<<0)	// At rest / on the ground
-			uintptr_t* ForceJump = (uintptr_t*)(uintptr_t(cheat->modules.client) + cheat->offsets.dwForceJump);
+			this->settings.ShowMenu = !settings.ShowMenu;
 
-			if (GetAsyncKeyState(VK_SPACE) && (*cheat->LocalPlayer->m_fFlags() & FL_ONGROUND))
+
+			this->interfaces.InputSystem->resetInputState();
+			//Disables clicking on menu, etc when menu is shown
+			this->interfaces.InputSystem->EnableInput(!this->settings.ShowMenu);
+
+			this->interfaces.EngineClient->ClientCmd_Unrestricted(this->settings.ShowMenu ? skCrypt("showconsole") : skCrypt("hideconsole"));
+		}
+		uintptr_t clientState = *(uintptr_t*)((uintptr_t)this->modules.engine + this->offsets.dwClientState);
+		int gameState = *(uintptr_t*)(clientState + this->offsets.dwClientState_State);
+
+
+		if (gameState == 6 && cheat->LocalPlayer != nullptr && *cheat->LocalPlayer->m_iHealth() > 0)
+		{
+			//cheat->viewMatrix = (sdk::VMatrix*)cheat->interfaces.EngineClient->WorldToScreenMatrix();
+
+			memcpy(&viewMatrix, (BYTE*)(uintptr_t(cheat->modules.client) + cheat->offsets.dwViewMatrix), sizeof(viewMatrix));
+
+			if (cheat->settings.LeftHandKnife)
+				LeftHandKnife();
+
+			if (cheat->settings.NoRecoil)
+				NoRecoil();
+
+
+			if (cheat->settings.FOV != *cheat->LocalPlayer->m_iDefaultFOV())
+				*cheat->LocalPlayer->m_iDefaultFOV() = cheat->settings.FOV;
+
+			if (cheat->settings.Bhop)
 			{
-				*ForceJump = 6;
-			}
-			else
-			{
-				*ForceJump = 4;
+#define	FL_ONGROUND				(1<<0)	// At rest / on the ground
+				uintptr_t* ForceJump = (uintptr_t*)(uintptr_t(cheat->modules.client) + cheat->offsets.dwForceJump);
+
+				if (GetAsyncKeyState(VK_SPACE) && (*cheat->LocalPlayer->m_fFlags() & FL_ONGROUND))
+				{
+					*ForceJump = 6;
+				}
+				else
+				{
+					*ForceJump = 4;
+				}
 			}
 		}
+
+
+		this->dx9.UpdateOverlayPosition();
 	}
+	catch (...)
+	{
 
-
-	this->dx9.UpdateOverlayPosition();
+	}
 }
 
 void Cheat::InitModules()
@@ -76,6 +88,7 @@ void Cheat::InitModules()
 	this->modules.client = GetModuleHandle(skCrypt(L"client"));
 	this->modules.engine = GetModuleHandle(skCrypt(L"engine"));
 	this->modules.inputSystem = GetModuleHandle(skCrypt(L"inputsystem"));
+	this->modules.gameoverlayrenderer = GetModuleHandle(skCrypt(L"gameoverlayrenderer"));
 }
 
 void Cheat::InitDirectX9()
@@ -90,6 +103,16 @@ void Cheat::InitHooks()
 {
 	this->hooks.endscene = Hook::Hook((PBYTE)this->dx9Vtable->EndScene, (PBYTE)hkEndScene, (PBYTE)&this->dx9.oEndScene, 7);
 	this->hooks.reset = Hook::Hook((PBYTE)this->dx9Vtable->Reset, (PBYTE)hkReset, (PBYTE)&this->dx9.oReset, 7);
+
+	//static PBYTE presentAddress = this->GetSignature(this->modules.gameoverlayrenderer, "\xC7\x45?????\xFF\x15????\x8B\xD8", false,{}, 2);
+	//uintptr_t* presentAddress = (uintptr_t*)this->GetSignature(this->modules.gameoverlayrenderer, "C7 45 ? ? ? ? ? FF 15 ? ? ? ? 8B D8", false,{}, 2);
+
+	//cheat->dx9.oPresent = (tPresent)(presentAddress);
+
+	//presentAddress = (uintptr_t*)(&hkPresent);
+
+
+	//std::cout << &hkPresent << std::endl;
 }
 
 void Cheat::InitInterfaces()
@@ -113,14 +136,17 @@ void Cheat::InitInterfaces()
 void Cheat::InitOffsets()
 {
 	//Engine.dll offsets
-	this->offsets.dwClientState = (uintptr_t)this->GetSignature(this->modules.engine, skCrypt("A1 ? ? ? ? 33 D2 6A 00 6A 00 33 C9 89 B0"), true, { 1 }, 0);
-	this->offsets.dwClientState_State = (uintptr_t)this->GetSignature(this->modules.engine, skCrypt("83 B8 ? ? ? ? ? 0F 94 C0 C3"), false, { 2 }, 0);
-	this->offsets.dwClientState_ViewAngles = (uintptr_t)this->GetSignature(this->modules.engine, skCrypt("F3 0F 11 86 ? ? ? ? F3 0F 10 44 24 ? F3 0F 11 86"), false, { 4 }, 0);
+	this->offsets.dwClientState = (uintptr_t)this->GetSignature(this->modules.engine, skCrypt("A1 ? ? ? ? 33 D2 6A 00 6A 00 33 C9 89 B0"), true, { 1 });
+	this->offsets.dwClientState_State = (uintptr_t)this->GetSignature(this->modules.engine, skCrypt("83 B8 ? ? ? ? ? 0F 94 C0 C3"), false, { 2 });
+	this->offsets.dwClientState_ViewAngles = (uintptr_t)this->GetSignature(this->modules.engine, skCrypt("F3 0F 11 86 ? ? ? ? F3 0F 10 44 24 ? F3 0F 11 86"), false, { 4 });
+
 
 	//Client.dll offsets
 
 	this->offsets.m_bDormant = (uintptr_t)this->GetSignature(this->modules.client, skCrypt("8A 81 ? ? ? ? C3 32 C0"), false, { 2 }, 8);
-	this->offsets.dwForceJump = (uintptr_t)this->GetSignature(this->modules.client, skCrypt("8B 0D ? ? ? ? 8B D6 8B C1 83 CA 02"), true, { 2 }, 0);
+	this->offsets.dwForceJump = (uintptr_t)this->GetSignature(this->modules.client, skCrypt("8B 0D ? ? ? ? 8B D6 8B C1 83 CA 02"), true, { 2 });
+	this->offsets.dwViewMatrix = (uintptr_t)this->GetSignature(this->modules.client, skCrypt("0F 10 05 ? ? ? ? 8D 85 ? ? ? ? B9"), true, { 3 }, 176);
+	this->offsets.m_pStudioHdr = (uintptr_t)this->GetSignature(this->modules.client, skCrypt("8B B6 ? ? ? ? 85 F6 74 05 83 3E 00 75 02 33 F6 F3 0F 10 44 24"), false, { 2 });
 }
 
 
@@ -249,19 +275,18 @@ int FrameRate()
 }
 
 
-bool WorldToScreenCalculation(Vec3 in, Vec2& screen, sdk::VMatrix matrix, int windowWidth, int windowHeight)
+bool WorldToScreenCalculation(Vec3 pos, Vec2& screen, int windowWidth, int windowHeight)
 {
-	//Matrix-vector Product, multiplying world(eye) coordinates by projection matrix = clipCoords
 	Vec4 clipCoords;
-	clipCoords.x = matrix.m[0][0] * in.x + matrix.m[0][1] * in.y + matrix.m[0][2] * in.z + matrix.m[0][3];
-	clipCoords.y = matrix.m[1][0] * in.x + matrix.m[1][1] * in.y + matrix.m[1][2] * in.z + matrix.m[1][3];
-	clipCoords.z = 0.0f;
-	clipCoords.w = matrix.m[3][0] * in.x + matrix.m[3][1] * in.y + matrix.m[3][2] * in.z + matrix.m[3][3];
+	clipCoords.x = pos.x * cheat->viewMatrix[0] + pos.y * cheat->viewMatrix[1] + pos.z * cheat->viewMatrix[2] + cheat->viewMatrix[3];
+	clipCoords.y = pos.x * cheat->viewMatrix[4] + pos.y * cheat->viewMatrix[5] + pos.z * cheat->viewMatrix[6] + cheat->viewMatrix[7];
+	clipCoords.z = pos.x * cheat->viewMatrix[8] + pos.y * cheat->viewMatrix[9] + pos.z * cheat->viewMatrix[10] + cheat->viewMatrix[11];
+	clipCoords.w = pos.x * cheat->viewMatrix[12] + pos.y * cheat->viewMatrix[13] + pos.z * cheat->viewMatrix[14] + cheat->viewMatrix[15];
 
 	if (clipCoords.w < 0.1f)
 		return false;
 
-	//perspective division, dividing by clip.W = Normalized Device Coordinates
+
 	Vec3 NDC;
 	NDC.x = clipCoords.x / clipCoords.w;
 	NDC.y = clipCoords.y / clipCoords.w;
@@ -277,7 +302,7 @@ bool Cheat::WorldToScreen(const Vec3& in, Vec2& out)
 {
 	if (cheat->viewMatrix != nullptr)
 	{
-		return WorldToScreenCalculation(in, out, *cheat->viewMatrix, (int)cheat->WindowSize.x, (int)cheat->WindowSize.y);
+		return WorldToScreenCalculation(in, out, (int)cheat->WindowSize.x, (int)cheat->WindowSize.y);
 	}
 	else
 	{

@@ -123,27 +123,24 @@ int FrameRate();
 bool LoadTextureFromFile(LPDIRECT3DDEVICE9 pDevice, const char* filename, PDIRECT3DTEXTURE9* out_texture, int* out_width, int* out_height);
 bool LoadTextureFromMemory(IDirect3DDevice9* pDevice, LPVOID pSrcData, IDirect3DTexture9* out_texture, int* out_width, int* out_height);
 
-std::mutex mtx;           // mutex for critical section
+//std::mutex mtx;           // mutex for critical section
 HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 {
 	if (pDevice == nullptr)
 		return cheat->dx9.oEndScene(pDevice);
 
 	static bool Initialized = false;
-	static int ChisatoIMGWidth, ChisatoIMGHeight;
+	/*static int ChisatoIMGWidth, ChisatoIMGHeight;
 	static IDirect3DTexture9* texture;
 
 	if (texture == nullptr)
 	{
 		LoadTextureFromFile(pDevice, skCrypt("chisatoEDcrop.png"), &texture, &ChisatoIMGWidth, &ChisatoIMGHeight);
-	}
-	
+	}*/
+
 	if (!Initialized)
 	{
 		InitImGui(pDevice);
-
-
-		
 
 		Initialized = true;
 	}
@@ -210,18 +207,44 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 			{
 				{
 			case 0:
-				bool SnaplineMenu = false;
-				if (ImGui::CollapsingHeader(skCrypt("Snaplines"), SnaplineMenu))
+				if (ImGui::CollapsingHeader(skCrypt("Snaplines")))
 				{
+					ImGui::ColorEdit3(skCrypt("Color"), cheat->settings.SnaplineColor, ImGuiColorEditFlags_NoInputs);
+
 					const char* SnaplineItems[]{ skCrypt("None"),skCrypt("Top"), skCrypt("Middle"), skCrypt("Bottom") };
 					ImGui::Indent(3.f);
 					ImGui::Text(skCrypt("Snapline Position:"));
 					ImGui::SameLine();
 					ImGui::Combo(skCrypt("###SnaplinesComboBox"), &cheat->settings.Snaplines, SnaplineItems, IM_ARRAYSIZE(SnaplineItems));
-
 				}
+
+				if (ImGui::CollapsingHeader(skCrypt("Boxes")))
+				{
+					ImGui::Checkbox(skCrypt("Filled Box"), &cheat->settings.BoxOverlay);
+					ImGui::ColorEdit3(skCrypt("Color"), cheat->settings.BoxColor, ImGuiColorEditFlags_NoInputs);
+
+					const char* BoxStyle[]{ skCrypt("None"), skCrypt("Rectangle"),skCrypt("Corners") };
+					ImGui::Indent(3.f);
+					ImGui::Text(skCrypt("Boxes Style:"));
+					ImGui::SameLine();
+					ImGui::Combo(skCrypt("###BoxesComboBox"), &cheat->settings.Boxes, BoxStyle, IM_ARRAYSIZE(BoxStyle));
+					if (cheat->settings.Boxes == 2)
+					{
+						ImGui::SliderInt(skCrypt("Corner Length"), &cheat->settings.CornerBoxLineLength, 1, 30);
+					}
+				}
+
+				ImGui::Checkbox(skCrypt("[Debug] Bones"), &cheat->settings.Bones);
+
 				break;
 				}
+
+			case 1:
+				ImGui::Text(skCrypt("Todo - Kye"));
+				break;
+			case 2:
+				ImGui::Text(skCrypt("Todo - Kye"));
+				break;
 			case 3:
 				ImGui::Checkbox(skCrypt("Show Watermark while playing"), &cheat->settings.Watermark);
 				ImGui::Checkbox(skCrypt("Show FPS"), &cheat->settings.ShowFPS);
@@ -241,7 +264,13 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 					cheat->interfaces.EngineClient->ClientCmd_Unrestricted(cheat->settings.LeftHandKnife ? skCrypt("cl_righthand 1") : skCrypt("cl_righthand 1"));
 				}
 				break;
+
+			case 4:
+				ImGui::Text(skCrypt("Todo - Kye"));
+				break;
 			}
+
+
 		}
 		ImGui::End();
 
@@ -258,7 +287,7 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 
 	ImU32 greyBg = ImGui::ColorConvertFloat4ToU32(ImVec4(0.1f, 0.1f, 0.1f, bgOpacity));
 	cheat->dx9.drawlist->AddRectFilled(ImVec2(0, 0), ImVec2(cheat->WindowSize.x, cheat->WindowSize.y), greyBg);
-	cheat->dx9.drawlist->AddImage((void*)texture, ImVec2((cheat->WindowSize.x - ChisatoIMGWidth / 1.1f) + 100, cheat->WindowSize.y - ChisatoIMGHeight / 1.1f), ImVec2(cheat->WindowSize.x + 100, cheat->WindowSize.y), ImVec2(0, 0), ImVec2(1, 1), ImGui::ColorConvertFloat4ToU32(ImVec4(1.f, 1.f, 1.f, bgOpacity)));
+	//cheat->dx9.drawlist->AddImage((void*)texture, ImVec2((cheat->WindowSize.x - ChisatoIMGWidth / 1.1f) + 100, cheat->WindowSize.y - ChisatoIMGHeight / 1.1f), ImVec2(cheat->WindowSize.x + 100, cheat->WindowSize.y), ImVec2(0, 0), ImVec2(1, 1), ImGui::ColorConvertFloat4ToU32(ImVec4(1.f, 1.f, 1.f, bgOpacity)));
 
 	ImGui::SetNextWindowBgAlpha(0.3f);
 
@@ -377,7 +406,7 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 
 
 	//mtx.try_lock() is so the drawing doesn't flicker if the user has multicore rendering on.
-	if (cheat->LocalPlayer != nullptr && mtx.try_lock())//When the player is ingame
+	if (cheat->LocalPlayer != nullptr)//When the player is ingame
 	{
 
 		for (int i = 0; i < cheat->interfaces.ClientEntityList->GetMaxEntities(); i++)
@@ -393,27 +422,87 @@ HRESULT APIENTRY hkEndScene(IDirect3DDevice9* pDevice)
 				Vec2 feetpos;
 				Vec2 headpos;
 				Vec3 HeadPos3D = entity->GetBonePosition(8);
+				HeadPos3D.z += 6;
 				if (cheat->WorldToScreen(*entity->m_vecOrigin(), feetpos) && cheat->WorldToScreen(HeadPos3D, headpos))
 				{
+
+
+					float* boneBounds = entity->GetBoneBounds();
+
+
+					//Snapline Colors
+					ImU32 SnaplineColor = ImGui::ColorConvertFloat4ToU32(ImVec4(cheat->settings.SnaplineColor[0], cheat->settings.SnaplineColor[1], cheat->settings.SnaplineColor[2], 255.f));
+					//ImU32 SnaplineColor = IM_COL32(cheat->settings.SnaplineColor[0], cheat->settings.SnaplineColor[1], cheat->settings.SnaplineColor[2], 255);
 					switch (cheat->settings.Snaplines)
 					{
 					case 1://Top
-						cheat->dx9.drawlist->AddLine(ImVec2(cheat->WindowSize.x / 2, 0), ImVec2(headpos.x, headpos.y), IM_COL32(168, 50, 50, 255));
+						cheat->dx9.drawlist->AddLine(ImVec2(cheat->WindowSize.x / 2, 0), ImVec2(headpos.x, headpos.y), SnaplineColor);
 						break;
-
+						{
 					case 2://Crosshair
-						cheat->dx9.drawlist->AddLine(ImVec2(cheat->WindowSize.x / 2, cheat->WindowSize.y / 2), ImVec2(headpos.x, headpos.y), IM_COL32(168, 50, 50, 255));
+						Vec2 mid = Vec2(cheat->WindowSize.x / 2, cheat->WindowSize.y / 2);
+						cheat->dx9.drawlist->AddLine(ImVec2(mid.x, mid.y), ImVec2(headpos.x, headpos.y), SnaplineColor);
+
+						break;
+						}
+					case 3://Bottom
+						cheat->dx9.drawlist->AddLine(ImVec2(cheat->WindowSize.x / 2, cheat->WindowSize.y), ImVec2(feetpos.x, feetpos.y), SnaplineColor);
+						break;
+					}
+					//Box Colors
+					ImU32 BoxColor = ImGui::ColorConvertFloat4ToU32(ImVec4(cheat->settings.BoxColor[0], cheat->settings.BoxColor[1], cheat->settings.BoxColor[2], 255.f));
+					switch (cheat->settings.Boxes)
+					{
+					case 1: // Full
+						cheat->dx9.drawlist->AddRect(ImVec2(boneBounds[0], headpos.y), ImVec2(boneBounds[1], feetpos.y), BoxColor);
 						break;
 
-					case 3://Bottom
-						cheat->dx9.drawlist->AddLine(ImVec2(cheat->WindowSize.x / 2, cheat->WindowSize.y), ImVec2(feetpos.x, feetpos.y), IM_COL32(168, 50, 50, 255));
+					case 2://4 corner box
+						int lineLength = cheat->settings.CornerBoxLineLength;
+						//Top left
+						cheat->dx9.drawlist->AddLine(ImVec2(boneBounds[0], headpos.y), ImVec2(boneBounds[0], headpos.y + lineLength), BoxColor);
+						cheat->dx9.drawlist->AddLine(ImVec2(boneBounds[0], headpos.y), ImVec2(boneBounds[0] + lineLength, headpos.y), BoxColor);
+
+						//Top right
+						cheat->dx9.drawlist->AddLine(ImVec2(boneBounds[1], headpos.y), ImVec2(boneBounds[1], headpos.y + lineLength), BoxColor);
+						cheat->dx9.drawlist->AddLine(ImVec2(boneBounds[1], headpos.y), ImVec2(boneBounds[1] - lineLength, headpos.y), BoxColor);
+
+						//Bottom left
+						cheat->dx9.drawlist->AddLine(ImVec2(boneBounds[0], feetpos.y), ImVec2(boneBounds[0], feetpos.y - lineLength), BoxColor);
+						cheat->dx9.drawlist->AddLine(ImVec2(boneBounds[0], feetpos.y), ImVec2(boneBounds[0] + lineLength, feetpos.y), BoxColor);
+
+						//Bottom right
+						cheat->dx9.drawlist->AddLine(ImVec2(boneBounds[1], feetpos.y), ImVec2(boneBounds[1], feetpos.y - lineLength), BoxColor);
+						cheat->dx9.drawlist->AddLine(ImVec2(boneBounds[1], feetpos.y), ImVec2(boneBounds[1] - lineLength, feetpos.y), BoxColor);
+
+
 						break;
 					}
 
+
+					if (cheat->settings.BoxOverlay)
+					{
+						ImU32 BoxOverlayColor = IM_COL32(33, 33, 33, 50);
+						cheat->dx9.drawlist->AddRectFilled(ImVec2(boneBounds[0], headpos.y), ImVec2(boneBounds[1], feetpos.y), BoxOverlayColor, ImDrawFlags_RoundCornersAll);
+					}
+
+					if (cheat->settings.Bones)
+					{
+						for (int i = 0; i < entity->GetBoneInfo().numbones; i++)
+						{
+							Vec3 BonePos3D = entity->GetBonePosition(i);
+							Vec2 BonePos2D;
+							if (cheat->WorldToScreen(BonePos3D, BonePos2D))
+							{
+								cheat->dx9.drawlist->AddText(ImVec2(BonePos2D.x, BonePos2D.y), IM_COL32(0, 0, 255, 255), std::to_string(i).c_str());
+								/*std::string s = std::to_string(entity->GetBoneInfo().id);
+								cheat->dx9.drawlist->AddText(ImVec2(BonePos2D.x, BonePos2D.y), IM_COL32(0, 0, 255, 255), s.c_str());*/
+							}
+						}
+					}
 				}
 			}
 		}
-		mtx.unlock();
 	}
 
 

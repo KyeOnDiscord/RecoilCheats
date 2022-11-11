@@ -16,6 +16,7 @@
 #include "hook.h"
 #include "endscene.h"
 #include "Reset.h"
+#include "presentHook.h"
 
 #include "sdk/sdk.h"
 #include "sdk/netvars.h"

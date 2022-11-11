@@ -1,13 +1,67 @@
 #include "Entity.h"
 
+
+class BoneMatrix
+{
+public:
+	float m[3][4];
+};
+
 Vec3 CCSPlayer::GetBonePosition(int BoneID)
 {
 	DWORD bonematrix = *this->m_dwBoneMatrix();
-	Vec3 bonePos;
-	bonePos.x = *(float*)(bonematrix + 0x30 * BoneID + 0x0C);
-	bonePos.y = *(float*)(bonematrix + 0x30 * BoneID + 0x1C);
-	bonePos.z = *(float*)(bonematrix + 0x30 * BoneID + 0x2C);
-	return bonePos;
+	BoneMatrix boneM = *(BoneMatrix*)(bonematrix + 0x30 * BoneID);
+	return Vec3(boneM.m[0][3], boneM.m[1][3], boneM.m[2][3]);
+}
+
+
+studiohdr_t CCSPlayer::GetBoneInfo()
+{
+	uintptr_t StudioHdr = *(uintptr_t*)((uintptr_t(this) + cheat->offsets.m_pStudioHdr));
+	studiohdr_t studiohdrreal = *(studiohdr_t*)(*((uintptr_t*)StudioHdr));
+	return studiohdrreal;
+}
+
+bool IsTooFar(Vec3 origin, Vec3 bone)
+{
+	float distance = origin.Distance(bone);
+	if (distance > 150)
+		return true;
+	return false;
+}
+
+float* CCSPlayer::GetBoneBounds()
+{
+	//First bone is the most left bone on screen, right bone is the most right bone on screen
+	int numBones = this->GetBoneInfo().numbones;
+	Vec3 origin = *this->m_vecOrigin();
+	float SmallestBone = FLT_MAX;
+	for (int i = 0; i < numBones; i++)
+	{
+		Vec3 bonePos = this->GetBonePosition(i);
+		if (IsTooFar(origin, bonePos))
+			continue;
+		Vec2 screenPos;
+		if (cheat->WorldToScreen(bonePos, screenPos) && screenPos.x < SmallestBone)
+		{
+			SmallestBone = screenPos.x;
+		}
+	}
+	float LargestBone = 0;
+
+	for (int i = 0; i < numBones; i++)
+	{
+		Vec3 bonePos = this->GetBonePosition(i);
+		if (IsTooFar(origin, bonePos))
+			continue;
+
+		Vec2 screenPos;
+		if (cheat->WorldToScreen(bonePos, screenPos) && screenPos.x > LargestBone)
+			LargestBone = screenPos.x;
+
+	}
+	float result[2] = { SmallestBone, LargestBone };
+	return result;
 }
 
 

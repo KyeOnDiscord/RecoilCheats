@@ -31,6 +31,11 @@ struct Vec2 {
 		return { x * arg, y * arg };
 	}
 
+	float Distance(Vec2 d)
+	{
+		return sqrt(pow(d.x - x, 2) + pow(d.y - y, 2));
+	}
+
 
 	void Normalize()
 	{
@@ -62,6 +67,14 @@ struct Vec3 {
 	}
 	Vec3 operator*(float d) {
 		return { x * d, y * d, z * d };
+	}
+	bool operator==(Vec3 d) {
+		return (x == d.x && y == d.y && z == d.z);
+	}
+
+	float Distance(Vec3 d)
+	{
+		return hypot(hypot(this->x - d.x, this->y - d.y), this->z - d.z);
 	}
 
 	void Normalize() {
